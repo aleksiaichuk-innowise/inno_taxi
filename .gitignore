@@ -12,7 +12,9 @@ vendor/
 go.sum
 
 # IDE
-.idea/
+.idea/*
+!.idea/runConfigurations
+!.idea/tools
 .vscode/
 *.iml
 

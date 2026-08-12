@@ -1,0 +1,20 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="user_service (debug)" type="GoApplicationRunConfiguration" factoryName="Go Application">
+    <module name="InnoTaxi" />
+    <working_directory value="$PROJECT_DIR$/services/user_service" />
+    <envs>
+      <env name="HTTP_HOST" value="localhost" />
+      <env name="HTTP_PORT" value="8080" />
+      <env name="MONGO_HOST" value="localhost" />
+      <env name="MONGO_PORT" value="27017" />
+      <env name="MONGO_DB" value="taxi" />
+      <env name="MONGO_USERNAME" value="taxi" />
+      <env name="MONGO_PASSWORD" value="taxi" />
+    </envs>
+    <kind value="FILE" />
+    <filePath value="$PROJECT_DIR$/services/user_service/cmd/main.go" />
+    <package value="github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/cmd" />
+    <directory value="$PROJECT_DIR$/services/user_service" />
+    <method v="2" />
+  </configuration>
+</component>

@@ -6,6 +6,10 @@ type UserRepository struct {
 	client *mongo.MongoClient
 }
 
+func (r UserRepository) CreateUser() {
+
+}
+
 func NewUserRepository(client *mongo.MongoClient) *UserRepository {
 	return &UserRepository{client: client}
 }

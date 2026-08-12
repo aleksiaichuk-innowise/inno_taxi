@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/config"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 type MongoClient struct {
@@ -21,10 +21,7 @@ func New(ctx context.Context, cfg *config.MongoConfig) (*MongoClient, error) {
 		cfg.Username, cfg.Password, cfg.Host, cfg.Port,
 	)
 
-	connectCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
-	defer cancel()
-
-	client, err := mongo.Connect(connectCtx, options.Client().ApplyURI(uri))
+	client, err := mongo.Connect(options.Client().ApplyURI(uri))
 	if err != nil {
 		return nil, fmt.Errorf("mongo: connect: %w", err)
 	}

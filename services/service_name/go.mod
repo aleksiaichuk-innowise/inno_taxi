@@ -1,1 +1,0 @@
-module awesomeProject/services/service_name

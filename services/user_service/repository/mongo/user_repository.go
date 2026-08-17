@@ -2,6 +2,7 @@ package mongo
 
 import (
 	"context"
+	"errors"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
 	drivermongo "go.mongodb.org/mongo-driver/v2/mongo"
@@ -46,10 +47,43 @@ func (r UserRepository) CreateUser(ctx context.Context, user *serviceEntity.User
 	return &created, nil
 }
 
+func (r UserRepository) FindByLogin(ctx context.Context, login string) (*serviceEntity.User, error) {
+	filter := bson.M{"$or": []bson.M{{"email": login}, {"phone": login}}}
+	res := r.client.Database.Collection(usersCollection).FindOne(ctx, filter)
+
+	var doc repoEntity.User
+	if err := res.Decode(&doc); err != nil {
+		if errors.Is(err, drivermongo.ErrNoDocuments) {
+			return nil, errorsx.ErrUserNotFound
+		}
+		return nil, err
+	}
+
+	return &serviceEntity.User{
+		ID:           doc.ID.Hex(),
+		Name:         doc.Name,
+		Email:        doc.Email,
+		Phone:        doc.Phone,
+		PasswordHash: doc.PasswordHash,
+		Roles:        stringsToRoles(doc.Roles),
+		CreatedAt:    doc.CreatedAt,
+		UpdatedAt:    doc.UpdatedAt,
+		DeletedAt:    doc.DeletedAt,
+	}, nil
+}
+
 func rolesToStrings(roles []serviceEntity.Role) []string {
 	out := make([]string, len(roles))
 	for i, r := range roles {
 		out[i] = string(r)
+	}
+	return out
+}
+
+func stringsToRoles(roles []string) []serviceEntity.Role {
+	out := make([]serviceEntity.Role, len(roles))
+	for i, r := range roles {
+		out[i] = serviceEntity.Role(r)
 	}
 	return out
 }

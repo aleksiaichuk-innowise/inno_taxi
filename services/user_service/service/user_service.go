@@ -9,15 +9,19 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	serviceEntity "github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/entity/service"
-	"github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/repository/mongo"
 	"github.com/aleksiaichuk-innowise/inno_taxi/shared/errorsx"
 )
 
-type UserService struct {
-	userRepo *mongo.UserRepository
+type UserRepository interface {
+	CreateUser(ctx context.Context, user *serviceEntity.User) (*serviceEntity.User, error)
+	FindByLogin(ctx context.Context, login string) (*serviceEntity.User, error)
 }
 
-func NewUserService(userRepo *mongo.UserRepository) *UserService {
+type UserService struct {
+	userRepo UserRepository
+}
+
+func NewUserService(userRepo UserRepository) *UserService {
 	return &UserService{userRepo}
 }
 
@@ -49,4 +53,17 @@ func (s UserService) CreateUser(ctx context.Context, input serviceEntity.Registe
 	}
 
 	return created, nil
+}
+
+func (s UserService) VerifyCredentials(ctx context.Context, login string, password string) (*serviceEntity.User, error) {
+	u, err := s.userRepo.FindByLogin(ctx, login)
+	if err != nil {
+		return nil, errorsx.ErrInvalidCredentials
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(password)); err != nil {
+		return nil, errorsx.ErrInvalidCredentials
+	}
+
+	return u, nil
 }

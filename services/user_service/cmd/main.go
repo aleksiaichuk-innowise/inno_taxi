@@ -53,7 +53,7 @@ func main() {
 	r := gin.Default()
 
 	r.POST("/register", h.Register)
-	r.POST("/login", h.Login)
+	r.POST("/internal/verify-credentials", h.VerifyCredentials)
 
 	if err := r.Run(fmt.Sprintf("%s:%s", cfg.Host.Host, cfg.Host.Port)); err != nil {
 		slog.Error("Failed to run server", "error", err)

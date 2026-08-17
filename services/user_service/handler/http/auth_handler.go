@@ -62,8 +62,34 @@ func rolesToStrings(roles []serviceEntity.Role) []string {
 	return out
 }
 
-func (h *Handler) Login(c *gin.Context) {
-	c.JSON(200, gin.H{
-		"message": "user login",
+func (h *Handler) VerifyCredentials(c *gin.Context) {
+	var req httpEntity.VerifyCredentialsReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, errorsx.HttpErrResp{Message: err.Error()})
+		return
+	}
+	if err := h.validate.Struct(&req); err != nil {
+		c.JSON(http.StatusUnprocessableEntity, errorsx.HttpErrResp{Message: err.Error()})
+		return
+	}
+
+	user, err := h.userSvc.VerifyCredentials(c.Request.Context(), req.Login, req.Password)
+	if err != nil {
+		switch {
+		case errors.Is(err, errorsx.ErrInvalidCredentials):
+			c.JSON(http.StatusUnauthorized, errorsx.HttpErrResp{Message: err.Error()})
+		default:
+			slog.Error("verify credentials", "error", err)
+			c.JSON(http.StatusInternalServerError, errorsx.HttpErrResp{Message: errorsx.ErrInternal.Error()})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, httpEntity.UserResp{
+		ID:    user.ID,
+		Name:  user.Name,
+		Email: user.Email,
+		Phone: user.Phone,
+		Roles: rolesToStrings(user.Roles),
 	})
 }

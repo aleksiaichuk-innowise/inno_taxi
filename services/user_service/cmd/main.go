@@ -12,6 +12,7 @@ import (
 	mongo_migration "github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/migrations/mongo"
 	mongo_repo "github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/repository/mongo"
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/service"
+	"github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/validation"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 )
@@ -42,6 +43,9 @@ func main() {
 
 	// deps
 	validate := validator.New()
+	if err := validation.Register(validate); err != nil {
+		log.Fatal(err)
+	}
 
 	// handlers
 

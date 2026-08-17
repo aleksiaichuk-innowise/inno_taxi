@@ -4,9 +4,15 @@ import "time"
 
 type Role string
 
+const (
+	RoleUser   Role = "user"
+	RoleDriver Role = "driver"
+)
+
 type User struct {
 	ID           string
 	Name         string
+	Email        string
 	Phone        string
 	PasswordHash string
 	Roles        []Role

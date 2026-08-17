@@ -1,41 +1,65 @@
 package http
 
 import (
+	"errors"
 	"log/slog"
-	http2 "net/http"
+	"net/http"
 
-	"github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/entity/http"
-	"github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/entity/service"
+	httpEntity "github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/entity/http"
+	serviceEntity "github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/entity/service"
 	"github.com/aleksiaichuk-innowise/inno_taxi/shared/errorsx"
 
 	"github.com/gin-gonic/gin"
 )
 
 func (h *Handler) Register(c *gin.Context) {
-	var r http.RegisterReq
-	if err := c.ShouldBindJSON(&r); err != nil {
-		c.JSON(http2.StatusUnprocessableEntity, errorsx.HttpErrResp{Message: "Unprocessable Entity"})
+	var req httpEntity.RegisterReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, errorsx.HttpErrResp{Message: err.Error()})
 		return
 	}
-	if err := h.validate.Struct(&r); err != nil {
-		c.JSON(http2.StatusUnprocessableEntity, errorsx.HttpErrResp{Message: err.Error()})
+	if err := h.validate.Struct(&req); err != nil {
+		c.JSON(http.StatusUnprocessableEntity, errorsx.HttpErrResp{Message: err.Error()})
+		return
 	}
 
-
-	input := service.RegisterInput{
-		Name: r.Name,
-		Phone: r.Phone,
-		Password: r.Password,
-		Email: r.Email,
-		Role:  service.Role(r.Role),
+	input := serviceEntity.RegisterInput{
+		Name:     req.Name,
+		Email:    req.Email,
+		Phone:    req.Phone,
+		Password: req.Password,
+		Role:     serviceEntity.Role(req.Role),
 	}
 
-
-
-	if err := h.userSvc.CreateUser(c, input); err != nil {
-		slog.Info("register error", err)
+	user, err := h.userSvc.CreateUser(c.Request.Context(), input)
+	if err != nil {
+		switch {
+		case errors.Is(err, errorsx.ErrUserAlreadyExists):
+			c.JSON(http.StatusConflict, errorsx.HttpErrResp{Message: err.Error()})
+		case errors.Is(err, errorsx.ErrInvalidRole):
+			c.JSON(http.StatusUnprocessableEntity, errorsx.HttpErrResp{Message: err.Error()})
+		default:
+			slog.Error("register: create user", "error", err)
+			c.JSON(http.StatusInternalServerError, errorsx.HttpErrResp{Message: errorsx.ErrInternal.Error()})
+		}
+		return
 	}
 
+	c.JSON(http.StatusCreated, httpEntity.UserResp{
+		ID:    user.ID,
+		Name:  user.Name,
+		Email: user.Email,
+		Phone: user.Phone,
+		Roles: rolesToStrings(user.Roles),
+	})
+}
+
+func rolesToStrings(roles []serviceEntity.Role) []string {
+	out := make([]string, len(roles))
+	for i, r := range roles {
+		out[i] = string(r)
+	}
+	return out
 }
 
 func (h *Handler) Login(c *gin.Context) {

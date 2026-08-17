@@ -1,30 +1,52 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"strings"
+	"time"
 
-	"github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/entity/service"
+	"golang.org/x/crypto/bcrypt"
+
+	serviceEntity "github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/entity/service"
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/repository/mongo"
-	"github.com/aleksiaichuk-innowise/inno_taxi/shared/consts"
-	"github.com/gin-gonic/gin"
+	"github.com/aleksiaichuk-innowise/inno_taxi/shared/errorsx"
 )
 
 type UserService struct {
 	userRepo *mongo.UserRepository
 }
 
-func (s UserService) CreateUser(c *gin.Context, input service.RegisterInput) error {
-	role := strings.ToLower(string(input.Role))
-	if role != consts.UserRole || role != consts.DriverRole {
-		return fmt.Errorf("invalid role")
-	}
-
-	s.userRepo.CreateUser()
-
-	return nil
-}
-
 func NewUserService(userRepo *mongo.UserRepository) *UserService {
 	return &UserService{userRepo}
+}
+
+func (s UserService) CreateUser(ctx context.Context, input serviceEntity.RegisterInput) (*serviceEntity.User, error) {
+	role := serviceEntity.Role(strings.ToLower(string(input.Role)))
+	if role != serviceEntity.RoleUser && role != serviceEntity.RoleDriver {
+		return nil, errorsx.ErrInvalidRole
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, fmt.Errorf("hash password: %w", err)
+	}
+
+	now := time.Now()
+	user := &serviceEntity.User{
+		Name:         input.Name,
+		Email:        input.Email,
+		Phone:        input.Phone,
+		PasswordHash: string(hash),
+		Roles:        []serviceEntity.Role{role},
+		CreatedAt:    now,
+		UpdatedAt:    now,
+	}
+
+	created, err := s.userRepo.CreateUser(ctx, user)
+	if err != nil {
+		return nil, err
+	}
+
+	return created, nil
 }

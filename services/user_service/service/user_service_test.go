@@ -23,6 +23,9 @@ func (f *fakeUserRepository) CreateUser(_ context.Context, _ *serviceEntity.User
 func (f *fakeUserRepository) FindByLogin(_ context.Context, _ string) (*serviceEntity.User, error) {
 	return f.user, f.err
 }
+func (f *fakeUserRepository) FindByID(_ context.Context, _ string) (*serviceEntity.User, error) {
+	return f.user, f.err
+}
 
 func hashPassword(t *testing.T, password string) string {
 	t.Helper()
@@ -79,5 +82,37 @@ func TestUserService_VerifyCredentials_UserNotFound(t *testing.T) {
 
 	if !errors.Is(err, errorsx.ErrInvalidCredentials) {
 		t.Errorf("got error %v, want %v", err, errorsx.ErrInvalidCredentials)
+	}
+}
+
+func TestUserService_GetProfile_Success(t *testing.T) {
+	repo := &fakeUserRepository{
+		user: &serviceEntity.User{
+			ID:    "1",
+			Name:  "Jane Doe",
+			Email: "user@example.com",
+			Roles: []serviceEntity.Role{serviceEntity.RoleUser},
+		},
+	}
+	svc := NewUserService(repo)
+
+	got, err := svc.GetProfile(context.Background(), "1")
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got.ID != "1" {
+		t.Errorf("got user ID %q, want %q", got.ID, "1")
+	}
+}
+
+func TestUserService_GetProfile_NotFound(t *testing.T) {
+	repo := &fakeUserRepository{err: errorsx.ErrUserNotFound}
+	svc := NewUserService(repo)
+
+	_, err := svc.GetProfile(context.Background(), "missing-id")
+
+	if !errors.Is(err, errorsx.ErrUserNotFound) {
+		t.Errorf("got error %v, want %v", err, errorsx.ErrUserNotFound)
 	}
 }

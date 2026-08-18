@@ -78,11 +78,12 @@ func (h *Handler) VerifyCredentials(c *gin.Context) {
 		switch {
 		case errors.Is(err, errorsx.ErrInvalidCredentials):
 			c.JSON(http.StatusUnauthorized, errorsx.HttpErrResp{Message: err.Error()})
+			return
 		default:
 			slog.Error("verify credentials", "error", err)
 			c.JSON(http.StatusInternalServerError, errorsx.HttpErrResp{Message: errorsx.ErrInternal.Error()})
+			return
 		}
-		return
 	}
 
 	c.JSON(http.StatusOK, httpEntity.UserResp{

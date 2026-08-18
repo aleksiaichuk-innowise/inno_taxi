@@ -15,6 +15,7 @@ import (
 type UserRepository interface {
 	CreateUser(ctx context.Context, user *serviceEntity.User) (*serviceEntity.User, error)
 	FindByLogin(ctx context.Context, login string) (*serviceEntity.User, error)
+	FindByID(ctx context.Context, id string) (*serviceEntity.User, error)
 }
 
 type UserService struct {
@@ -66,4 +67,8 @@ func (s UserService) VerifyCredentials(ctx context.Context, login string, passwo
 	}
 
 	return u, nil
+}
+
+func (s UserService) GetProfile(ctx context.Context, id string) (*serviceEntity.User, error) {
+	return s.userRepo.FindByID(ctx, id)
 }

@@ -5,9 +5,20 @@ import "time"
 type Role string
 
 const (
-	RoleUser   Role = "user"
-	RoleDriver Role = "driver"
+	RoleUser    Role = "user"
+	RoleDriver  Role = "driver"
+	RoleAdmin   Role = "admin"
+	RoleAnalyst Role = "analyst"
 )
+
+func (r Role) IsValid() bool {
+	switch r {
+	case RoleUser, RoleDriver, RoleAdmin, RoleAnalyst:
+		return true
+	default:
+		return false
+	}
+}
 
 type User struct {
 	ID           string

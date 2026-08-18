@@ -8,6 +8,7 @@ import (
 
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/app/db/mongo"
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/config"
+	entity "github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/entity/service"
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/handler/http"
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/handler/http/middleware"
 	mongo_migration "github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/migrations/mongo"
@@ -63,6 +64,12 @@ func main() {
 		profile.PATCH("", h.UpdateProfile)
 		profile.DELETE("", h.DeleteProfile)
 		profile.POST("/password", h.UpdatePassword)
+	}
+
+	admin := r.Group("/admin")
+	admin.Use(middleware.Auth(cfg.JWT.Secret))
+	{
+		admin.POST("/users/:id/analyst-role", middleware.RequireRole(entity.RoleAdmin), h.AssignRoleAnalytic)
 	}
 
 	if err := r.Run(fmt.Sprintf("%s:%s", cfg.Host.Host, cfg.Host.Port)); err != nil {

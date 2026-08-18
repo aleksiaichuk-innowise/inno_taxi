@@ -25,6 +25,10 @@ type fakeUserRepository struct {
 
 	deleteErr    error
 	deleteCalled bool
+
+	addRoleErr    error
+	addRoleCalled bool
+	addRoleArg    string
 }
 
 func (f *fakeUserRepository) CreateUser(_ context.Context, _ *serviceEntity.User) (*serviceEntity.User, error) {
@@ -50,6 +54,12 @@ func (f *fakeUserRepository) SetPassword(_ context.Context, _ string, password s
 func (f *fakeUserRepository) DeleteProfile(_ context.Context, _ string) error {
 	f.deleteCalled = true
 	return f.deleteErr
+}
+
+func (f *fakeUserRepository) AddRole(_ context.Context, _ string, role string) error {
+	f.addRoleCalled = true
+	f.addRoleArg = role
+	return f.addRoleErr
 }
 
 func hashPassword(t *testing.T, password string) string {
@@ -253,6 +263,48 @@ func TestUserService_DeleteProfile_NotFound(t *testing.T) {
 	svc := NewUserService(repo)
 
 	err := svc.DeleteProfile(context.Background(), "missing-id")
+
+	if !errors.Is(err, errorsx.ErrUserNotFound) {
+		t.Errorf("got error %v, want %v", err, errorsx.ErrUserNotFound)
+	}
+}
+
+func TestUserService_AssignRole_Success(t *testing.T) {
+	repo := &fakeUserRepository{}
+	svc := NewUserService(repo)
+
+	err := svc.AssignRole(context.Background(), "1", serviceEntity.RoleAnalyst)
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !repo.addRoleCalled {
+		t.Fatal("expected repository AddRole to be called")
+	}
+	if repo.addRoleArg != string(serviceEntity.RoleAnalyst) {
+		t.Errorf("got role %q, want %q", repo.addRoleArg, serviceEntity.RoleAnalyst)
+	}
+}
+
+func TestUserService_AssignRole_InvalidRole(t *testing.T) {
+	repo := &fakeUserRepository{}
+	svc := NewUserService(repo)
+
+	err := svc.AssignRole(context.Background(), "1", serviceEntity.Role("bogus"))
+
+	if !errors.Is(err, errorsx.ErrInvalidRole) {
+		t.Errorf("got error %v, want %v", err, errorsx.ErrInvalidRole)
+	}
+	if repo.addRoleCalled {
+		t.Error("expected repository AddRole not to be called for an invalid role")
+	}
+}
+
+func TestUserService_AssignRole_NotFound(t *testing.T) {
+	repo := &fakeUserRepository{addRoleErr: errorsx.ErrUserNotFound}
+	svc := NewUserService(repo)
+
+	err := svc.AssignRole(context.Background(), "missing-id", serviceEntity.RoleAnalyst)
 
 	if !errors.Is(err, errorsx.ErrUserNotFound) {
 		t.Errorf("got error %v, want %v", err, errorsx.ErrUserNotFound)

@@ -19,6 +19,7 @@ type UserRepository interface {
 	UpdateProfile(ctx context.Context, id, name, email, phone string) (*serviceEntity.User, error)
 	SetPassword(ctx context.Context, id string, password string) (err error)
 	DeleteProfile(ctx context.Context, id string) (err error)
+	AddRole(ctx context.Context, id, role string) error
 }
 
 type UserService struct {
@@ -100,4 +101,12 @@ func (s UserService) UpdatePassword(ctx context.Context, id string, currentPassw
 
 func (s UserService) DeleteProfile(ctx context.Context, id string) error {
 	return s.userRepo.DeleteProfile(ctx, id)
+}
+
+func (s UserService) AssignRole(ctx context.Context, userID string, role serviceEntity.Role) error {
+	if !role.IsValid() {
+		return errorsx.ErrInvalidRole
+	}
+
+	return s.userRepo.AddRole(ctx, userID, string(role))
 }

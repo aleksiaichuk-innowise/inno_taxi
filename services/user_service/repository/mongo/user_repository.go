@@ -195,6 +195,32 @@ func (r UserRepository) SetPassword(ctx context.Context, id string, password str
 	return nil
 }
 
+func (r UserRepository) AddRole(ctx context.Context, id, role string) error {
+	objID, err := bson.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+	filter := bson.M{"_id": objID, "deleted_at": nil}
+	update := bson.M{
+		"$addToSet": bson.M{
+			"roles": role,
+		},
+		"$set": bson.M{
+			"updated_at": time.Now(),
+		},
+	}
+	res, err := r.client.Database.Collection(usersCollection).UpdateOne(ctx, filter, update)
+	if err != nil {
+		return err
+	}
+
+	if res.MatchedCount == 0 {
+		return errorsx.ErrUserNotFound
+	}
+
+	return nil
+}
+
 func rolesToStrings(roles []serviceEntity.Role) []string {
 	out := make([]string, len(roles))
 	for i, r := range roles {

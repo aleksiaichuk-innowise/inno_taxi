@@ -9,6 +9,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+
+	"github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/entity/service"
 )
 
 func init() {
@@ -136,5 +138,71 @@ func TestAuth_ExpiredToken(t *testing.T) {
 
 	if w.Code != http.StatusUnauthorized {
 		t.Errorf("got status %d, want %d", w.Code, http.StatusUnauthorized)
+	}
+}
+
+func newRequireRoleTestRouter(secret string, role service.Role) *gin.Engine {
+	r := gin.New()
+	r.Use(Auth(secret))
+	r.Use(RequireRole(role))
+	r.GET("/protected", func(c *gin.Context) {
+		c.Status(http.StatusOK)
+	})
+	return r
+}
+
+func TestRequireRole_Allowed(t *testing.T) {
+	secret := "test-secret"
+	r := newRequireRoleTestRouter(secret, service.RoleAdmin)
+
+	token := signToken(t, secret, &CustomClaims{
+		Roles: []string{"admin"},
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   "user-1",
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
+		},
+	})
+
+	w := doRequest(r, "Bearer "+token)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("got status %d, want %d; body=%s", w.Code, http.StatusOK, w.Body.String())
+	}
+}
+
+func TestRequireRole_MissingRole(t *testing.T) {
+	secret := "test-secret"
+	r := newRequireRoleTestRouter(secret, service.RoleAdmin)
+
+	token := signToken(t, secret, &CustomClaims{
+		Roles: []string{"user"},
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   "user-1",
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
+		},
+	})
+
+	w := doRequest(r, "Bearer "+token)
+
+	if w.Code != http.StatusForbidden {
+		t.Errorf("got status %d, want %d", w.Code, http.StatusForbidden)
+	}
+}
+
+func TestRequireRole_NoRolesClaim(t *testing.T) {
+	secret := "test-secret"
+	r := newRequireRoleTestRouter(secret, service.RoleAdmin)
+
+	token := signToken(t, secret, &CustomClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   "user-1",
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
+		},
+	})
+
+	w := doRequest(r, "Bearer "+token)
+
+	if w.Code != http.StatusForbidden {
+		t.Errorf("got status %d, want %d", w.Code, http.StatusForbidden)
 	}
 }

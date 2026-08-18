@@ -3,8 +3,11 @@ package middleware
 import (
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 
+	"github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/entity/service"
+	"github.com/aleksiaichuk-innowise/inno_taxi/shared/errorsx"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -18,13 +21,13 @@ func Auth(secret string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "authorization header is required"})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, errorsx.HttpErrResp{Message: "Authorization header is empty"})
 			return
 		}
 
 		parts := strings.SplitN(authHeader, " ", 2)
 		if len(parts) != 2 || parts[0] != "Bearer" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid authorization header format"})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, errorsx.HttpErrResp{Message: "Authorization header format is invalid"})
 			return
 		}
 
@@ -39,13 +42,29 @@ func Auth(secret string) gin.HandlerFunc {
 		})
 
 		if err != nil || !token.Valid {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, errorsx.HttpErrResp{Message: "Unauthorized"})
 			return
 		}
 
 		c.Set("userID", claims.Subject)
 		c.Set("roles", claims.Roles)
 
+		c.Next()
+	}
+}
+
+func RequireRole(role service.Role) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if !role.IsValid() {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, errorsx.HttpErrResp{Message: "Incorrect role"})
+			return
+		}
+		roles := c.GetStringSlice("roles")
+
+		if ok := slices.Contains(roles, string(role)); !ok {
+			c.AbortWithStatusJSON(http.StatusForbidden, errorsx.HttpErrResp{Message: "role not allowed"})
+			return
+		}
 		c.Next()
 	}
 }

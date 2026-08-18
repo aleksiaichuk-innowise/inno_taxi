@@ -14,6 +14,14 @@ import (
 type fakeUserRepository struct {
 	user *serviceEntity.User
 	err  error
+
+	updateUser   *serviceEntity.User
+	updateErr    error
+	updateCalled bool
+
+	setPasswordErr    error
+	setPasswordCalled bool
+	setPasswordArg    string
 }
 
 func (f *fakeUserRepository) CreateUser(_ context.Context, _ *serviceEntity.User) (*serviceEntity.User, error) {
@@ -27,6 +35,15 @@ func (f *fakeUserRepository) FindByID(_ context.Context, _ string) (*serviceEnti
 	return f.user, f.err
 }
 
+func (f *fakeUserRepository) UpdateProfile(_ context.Context, _, _, _, _ string) (*serviceEntity.User, error) {
+	f.updateCalled = true
+	return f.updateUser, f.updateErr
+}
+func (f *fakeUserRepository) SetPassword(_ context.Context, _ string, password string) error {
+	f.setPasswordCalled = true
+	f.setPasswordArg = password
+	return f.setPasswordErr
+}
 func hashPassword(t *testing.T, password string) string {
 	t.Helper()
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
@@ -111,6 +128,124 @@ func TestUserService_GetProfile_NotFound(t *testing.T) {
 	svc := NewUserService(repo)
 
 	_, err := svc.GetProfile(context.Background(), "missing-id")
+
+	if !errors.Is(err, errorsx.ErrUserNotFound) {
+		t.Errorf("got error %v, want %v", err, errorsx.ErrUserNotFound)
+	}
+}
+
+func TestUserService_UpdateProfile_Success(t *testing.T) {
+	updated := &serviceEntity.User{ID: "1", Name: "New Name", Email: "new@example.com", Phone: "+15550001111"}
+	repo := &fakeUserRepository{
+		user: &serviceEntity.User{
+			ID:           "1",
+			PasswordHash: hashPassword(t, "correct-password"),
+		},
+		updateUser: updated,
+	}
+	svc := NewUserService(repo)
+
+	got, err := svc.UpdateProfile(context.Background(), "1", serviceEntity.ProfileInput{
+		Name:            "New Name",
+		Email:           "new@example.com",
+		Phone:           "+15550001111",
+		CurrentPassword: "correct-password",
+	})
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got != updated {
+		t.Errorf("got user %+v, want %+v", got, updated)
+	}
+}
+
+func TestUserService_UpdateProfile_WrongPassword(t *testing.T) {
+	repo := &fakeUserRepository{
+		user: &serviceEntity.User{
+			ID:           "1",
+			PasswordHash: hashPassword(t, "correct-password"),
+		},
+	}
+	svc := NewUserService(repo)
+
+	_, err := svc.UpdateProfile(context.Background(), "1", serviceEntity.ProfileInput{
+		Name:            "New Name",
+		Email:           "new@example.com",
+		Phone:           "+15550001111",
+		CurrentPassword: "wrong-password",
+	})
+
+	if !errors.Is(err, errorsx.ErrInvalidCredentials) {
+		t.Errorf("got error %v, want %v", err, errorsx.ErrInvalidCredentials)
+	}
+	if repo.updateCalled {
+		t.Error("expected repository update not to be called after failed password check")
+	}
+}
+
+func TestUserService_UpdateProfile_NotFound(t *testing.T) {
+	repo := &fakeUserRepository{err: errorsx.ErrUserNotFound}
+	svc := NewUserService(repo)
+
+	_, err := svc.UpdateProfile(context.Background(), "missing-id", serviceEntity.ProfileInput{
+		Name:            "New Name",
+		Email:           "new@example.com",
+		Phone:           "+15550001111",
+		CurrentPassword: "any-password",
+	})
+
+	if !errors.Is(err, errorsx.ErrUserNotFound) {
+		t.Errorf("got error %v, want %v", err, errorsx.ErrUserNotFound)
+	}
+}
+
+func TestUserService_UpdatePassword_Success(t *testing.T) {
+	repo := &fakeUserRepository{
+		user: &serviceEntity.User{
+			ID:           "1",
+			PasswordHash: hashPassword(t, "old-password"),
+		},
+	}
+	svc := NewUserService(repo)
+
+	err := svc.UpdatePassword(context.Background(), "1", "old-password", "new-password")
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !repo.setPasswordCalled {
+		t.Fatal("expected repository SetPassword to be called")
+	}
+	if bcrypt.CompareHashAndPassword([]byte(repo.setPasswordArg), []byte("new-password")) != nil {
+		t.Error("stored hash does not match the new password")
+	}
+}
+
+func TestUserService_UpdatePassword_WrongCurrentPassword(t *testing.T) {
+	repo := &fakeUserRepository{
+		user: &serviceEntity.User{
+			ID:           "1",
+			PasswordHash: hashPassword(t, "old-password"),
+		},
+	}
+	svc := NewUserService(repo)
+
+	err := svc.UpdatePassword(context.Background(), "1", "wrong-password", "new-password")
+
+	if !errors.Is(err, errorsx.ErrInvalidCredentials) {
+		t.Errorf("got error %v, want %v", err, errorsx.ErrInvalidCredentials)
+	}
+	if repo.setPasswordCalled {
+		t.Error("expected repository SetPassword not to be called after failed password check")
+	}
+}
+
+func TestUserService_UpdatePassword_NotFound(t *testing.T) {
+	repo := &fakeUserRepository{err: errorsx.ErrUserNotFound}
+	svc := NewUserService(repo)
+
+	err := svc.UpdatePassword(context.Background(), "missing-id", "old-password", "new-password")
 
 	if !errors.Is(err, errorsx.ErrUserNotFound) {
 		t.Errorf("got error %v, want %v", err, errorsx.ErrUserNotFound)

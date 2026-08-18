@@ -16,6 +16,8 @@ type UserRepository interface {
 	CreateUser(ctx context.Context, user *serviceEntity.User) (*serviceEntity.User, error)
 	FindByLogin(ctx context.Context, login string) (*serviceEntity.User, error)
 	FindByID(ctx context.Context, id string) (*serviceEntity.User, error)
+	UpdateProfile(ctx context.Context, id, name, email, phone string) (*serviceEntity.User, error)
+	SetPassword(ctx context.Context, id string, password string) (err error)
 }
 
 type UserService struct {
@@ -71,4 +73,35 @@ func (s UserService) VerifyCredentials(ctx context.Context, login string, passwo
 
 func (s UserService) GetProfile(ctx context.Context, id string) (*serviceEntity.User, error) {
 	return s.userRepo.FindByID(ctx, id)
+}
+
+func (s UserService) UpdateProfile(ctx context.Context, id string, input serviceEntity.ProfileInput) (*serviceEntity.User, error) {
+	usr, err := s.userRepo.FindByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(usr.PasswordHash), []byte(input.CurrentPassword)); err != nil {
+		return nil, errorsx.ErrInvalidCredentials
+	}
+
+	return s.userRepo.UpdateProfile(ctx, id, input.Name, input.Email, input.Phone)
+}
+
+func (s UserService) UpdatePassword(ctx context.Context, id string, currentPasswd string, newPasswd string) error {
+	usr, err := s.userRepo.FindByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(usr.PasswordHash), []byte(currentPasswd)); err != nil {
+		return errorsx.ErrInvalidCredentials
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(newPasswd), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("hash password: %w", err)
+	}
+
+	return s.userRepo.SetPassword(ctx, id, string(hash))
 }

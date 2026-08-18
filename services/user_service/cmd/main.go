@@ -55,6 +55,8 @@ func main() {
 	r.POST("/register", h.Register)
 	r.POST("/internal/verify-credentials", h.VerifyCredentials)
 	r.GET("/users/:id", h.Profile)
+	r.PATCH("/users/:id", h.UpdateProfile)
+	r.PUT("/users/:id/password", h.UpdatePassword)
 	if err := r.Run(fmt.Sprintf("%s:%s", cfg.Host.Host, cfg.Host.Port)); err != nil {
 		slog.Error("Failed to run server", "error", err)
 	}

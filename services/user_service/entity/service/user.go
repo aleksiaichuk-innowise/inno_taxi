@@ -28,3 +28,10 @@ type RegisterInput struct {
 	Password string
 	Role     Role
 }
+
+type ProfileInput struct {
+	Name            string
+	Email           string
+	Phone           string
+	CurrentPassword string
+}

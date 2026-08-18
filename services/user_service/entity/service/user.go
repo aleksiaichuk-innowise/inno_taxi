@@ -30,8 +30,7 @@ type RegisterInput struct {
 }
 
 type ProfileInput struct {
-	Name            string
-	Email           string
-	Phone           string
-	CurrentPassword string
+	Name  string
+	Email string
+	Phone string
 }

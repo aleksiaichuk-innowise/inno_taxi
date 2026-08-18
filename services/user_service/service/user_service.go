@@ -18,6 +18,7 @@ type UserRepository interface {
 	FindByID(ctx context.Context, id string) (*serviceEntity.User, error)
 	UpdateProfile(ctx context.Context, id, name, email, phone string) (*serviceEntity.User, error)
 	SetPassword(ctx context.Context, id string, password string) (err error)
+	DeleteProfile(ctx context.Context, id string) (err error)
 }
 
 type UserService struct {
@@ -76,15 +77,6 @@ func (s UserService) GetProfile(ctx context.Context, id string) (*serviceEntity.
 }
 
 func (s UserService) UpdateProfile(ctx context.Context, id string, input serviceEntity.ProfileInput) (*serviceEntity.User, error) {
-	usr, err := s.userRepo.FindByID(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := bcrypt.CompareHashAndPassword([]byte(usr.PasswordHash), []byte(input.CurrentPassword)); err != nil {
-		return nil, errorsx.ErrInvalidCredentials
-	}
-
 	return s.userRepo.UpdateProfile(ctx, id, input.Name, input.Email, input.Phone)
 }
 
@@ -104,4 +96,8 @@ func (s UserService) UpdatePassword(ctx context.Context, id string, currentPassw
 	}
 
 	return s.userRepo.SetPassword(ctx, id, string(hash))
+}
+
+func (s UserService) DeleteProfile(ctx context.Context, id string) error {
+	return s.userRepo.DeleteProfile(ctx, id)
 }

@@ -14,11 +14,11 @@ type VerifyCredentialsReq struct {
 }
 
 type UpdateProfileReq struct {
-	Name            string `json:"name" binding:"required" validate:"required,min=2,max=32"`
-	Email           string `json:"email" binding:"required" validate:"required,email"`
-	Phone           string `json:"phone" binding:"required" validate:"required,phone"`
-	CurrentPassword string `json:"current_password" binding:"required" validate:"required,min=8,max=32"`
+	Name  string `json:"name" binding:"required" validate:"required,min=2,max=32"`
+	Email string `json:"email" binding:"required" validate:"required,email"`
+	Phone string `json:"phone" binding:"required" validate:"required,phone"`
 }
+
 type UpdatePasswordReq struct {
 	CurrentPassword string `json:"current_password" binding:"required" validate:"required,min=8,max=32"`
 	NewPassword     string `json:"new_password" binding:"required" validate:"required,min=8,max=32"`

@@ -12,7 +12,7 @@ import (
 )
 
 func (h *Handler) Profile(c *gin.Context) {
-	id := c.Param("id")
+	id := c.GetString("userID")
 	usr, err := h.userSvc.GetProfile(c.Request.Context(), id)
 	if err != nil {
 		switch {
@@ -34,7 +34,7 @@ func (h *Handler) Profile(c *gin.Context) {
 }
 
 func (h *Handler) UpdateProfile(c *gin.Context) {
-	id := c.Param("id")
+	id := c.GetString("userID")
 	var req resp.UpdateProfileReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, errorsx.HttpErrResp{Message: err.Error()})
@@ -46,10 +46,9 @@ func (h *Handler) UpdateProfile(c *gin.Context) {
 	}
 
 	input := service.ProfileInput{
-		Name:            req.Name,
-		Email:           req.Email,
-		Phone:           req.Phone,
-		CurrentPassword: req.CurrentPassword,
+		Name:  req.Name,
+		Email: req.Email,
+		Phone: req.Phone,
 	}
 
 	usr, err := h.userSvc.UpdateProfile(c.Request.Context(), id, input)
@@ -57,8 +56,6 @@ func (h *Handler) UpdateProfile(c *gin.Context) {
 		switch {
 		case errors.Is(err, errorsx.ErrUserNotFound):
 			c.JSON(http.StatusNotFound, errorsx.HttpErrResp{Message: err.Error()})
-		case errors.Is(err, errorsx.ErrInvalidCredentials):
-			c.JSON(http.StatusUnauthorized, errorsx.HttpErrResp{Message: err.Error()})
 		case errors.Is(err, errorsx.ErrUserAlreadyExists):
 			c.JSON(http.StatusConflict, errorsx.HttpErrResp{Message: err.Error()})
 		default:
@@ -78,7 +75,7 @@ func (h *Handler) UpdateProfile(c *gin.Context) {
 }
 
 func (h *Handler) UpdatePassword(c *gin.Context) {
-	id := c.Param("id")
+	id := c.GetString("userID")
 	var req resp.UpdatePasswordReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, errorsx.HttpErrResp{Message: err.Error()})
@@ -103,5 +100,22 @@ func (h *Handler) UpdatePassword(c *gin.Context) {
 		}
 		return
 	}
+}
 
+func (h *Handler) DeleteProfile(c *gin.Context) {
+	id := c.GetString("userID")
+
+	err := h.userSvc.DeleteProfile(c.Request.Context(), id)
+	if err != nil {
+		switch {
+		case errors.Is(err, errorsx.ErrUserNotFound):
+			c.JSON(http.StatusNotFound, errorsx.HttpErrResp{Message: err.Error()})
+		default:
+			slog.Error("delete profile", "error", err)
+			c.JSON(http.StatusInternalServerError, errorsx.HttpErrResp{Message: errorsx.ErrInternal.Error()})
+		}
+		return
+	}
+
+	c.Status(http.StatusNoContent)
 }

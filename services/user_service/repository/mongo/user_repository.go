@@ -25,6 +25,32 @@ type UserRepository struct {
 	client *dbmongo.MongoClient
 }
 
+func (r UserRepository) DeleteProfile(ctx context.Context, id string) (err error) {
+	objID, err := bson.ObjectIDFromHex(id)
+	if err != nil {
+		return errorsx.ErrUserNotFound
+	}
+	filter := bson.M{
+		"_id":        objID,
+		"deleted_at": nil,
+	}
+	update := bson.M{
+		"$set": bson.M{
+			"deleted_at": time.Now(),
+			"updated_at": time.Now(),
+		},
+	}
+
+	res, err := r.client.Database.Collection(usersCollection).UpdateOne(ctx, filter, update)
+	if err != nil {
+		return err
+	}
+	if res.MatchedCount == 0 {
+		return errorsx.ErrUserNotFound
+	}
+	return nil
+}
+
 func NewUserRepository(client *dbmongo.MongoClient) *UserRepository {
 	return &UserRepository{client: client}
 }

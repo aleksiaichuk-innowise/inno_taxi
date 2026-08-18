@@ -9,17 +9,22 @@ import (
 type Config struct {
 	Mongo *MongoConfig
 	Host  *HostConfig
+	JWT   *JWTConfig
 }
 type MongoConfig struct {
-	Host     string `env:"MONGO_HOST" envDefault:"localhost"`
-	Port     string `env:"MONGO_PORT" envDefault:"27017"`
-	Database string `env:"MONGO_DB" envDefault:"test"`
-	Username string `env:"MONGO_USERNAME" envDefault:"taxi"`
-	Password string `env:"MONGO_PASSWORD" envDefault:"taxi"`
+	Host     string `env:"MONGO_HOST"`
+	Port     string `env:"MONGO_PORT"`
+	Database string `env:"MONGO_DB"`
+	Username string `env:"MONGO_USERNAME"`
+	Password string `env:"MONGO_PASSWORD"`
 }
 type HostConfig struct {
-	Host string `env:"HTTP_HOST" envDefault:"localhost"`
-	Port string `env:"HTTP_PORT" envDefault:"8080"`
+	Host string `env:"HTTP_HOST"`
+	Port string `env:"HTTP_PORT"`
+}
+
+type JWTConfig struct {
+	Secret string `env:"JWT_SECRET"`
 }
 
 func Load() *Config {
@@ -35,6 +40,9 @@ func Load() *Config {
 		Host: &HostConfig{
 			Host: getEnv("HTTP_HOST", "localhost"),
 			Port: getEnv("HTTP_PORT", "8080"),
+		},
+		JWT: &JWTConfig{
+			Secret: getEnv("JWT_SECRET", "taxi"),
 		},
 	}
 }

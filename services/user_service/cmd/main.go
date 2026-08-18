@@ -9,6 +9,7 @@ import (
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/app/db/mongo"
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/config"
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/handler/http"
+	"github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/handler/http/middleware"
 	mongo_migration "github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/migrations/mongo"
 	mongo_repo "github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/repository/mongo"
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/service"
@@ -54,9 +55,16 @@ func main() {
 
 	r.POST("/register", h.Register)
 	r.POST("/internal/verify-credentials", h.VerifyCredentials)
-	r.GET("/users/:id", h.Profile)
-	r.PATCH("/users/:id", h.UpdateProfile)
-	r.PUT("/users/:id/password", h.UpdatePassword)
+
+	profile := r.Group("/profile")
+	profile.Use(middleware.Auth(cfg.JWT.Secret))
+	{
+		profile.GET("", h.Profile)
+		profile.PATCH("", h.UpdateProfile)
+		profile.DELETE("", h.DeleteProfile)
+		profile.POST("/password", h.UpdatePassword)
+	}
+
 	if err := r.Run(fmt.Sprintf("%s:%s", cfg.Host.Host, cfg.Host.Port)); err != nil {
 		slog.Error("Failed to run server", "error", err)
 	}

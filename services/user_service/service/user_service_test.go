@@ -22,6 +22,9 @@ type fakeUserRepository struct {
 	setPasswordErr    error
 	setPasswordCalled bool
 	setPasswordArg    string
+
+	deleteErr    error
+	deleteCalled bool
 }
 
 func (f *fakeUserRepository) CreateUser(_ context.Context, _ *serviceEntity.User) (*serviceEntity.User, error) {
@@ -44,6 +47,11 @@ func (f *fakeUserRepository) SetPassword(_ context.Context, _ string, password s
 	f.setPasswordArg = password
 	return f.setPasswordErr
 }
+func (f *fakeUserRepository) DeleteProfile(_ context.Context, _ string) error {
+	f.deleteCalled = true
+	return f.deleteErr
+}
+
 func hashPassword(t *testing.T, password string) string {
 	t.Helper()
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
@@ -146,10 +154,9 @@ func TestUserService_UpdateProfile_Success(t *testing.T) {
 	svc := NewUserService(repo)
 
 	got, err := svc.UpdateProfile(context.Background(), "1", serviceEntity.ProfileInput{
-		Name:            "New Name",
-		Email:           "new@example.com",
-		Phone:           "+15550001111",
-		CurrentPassword: "correct-password",
+		Name:  "New Name",
+		Email: "new@example.com",
+		Phone: "+15550001111",
 	})
 
 	if err != nil {
@@ -160,39 +167,14 @@ func TestUserService_UpdateProfile_Success(t *testing.T) {
 	}
 }
 
-func TestUserService_UpdateProfile_WrongPassword(t *testing.T) {
-	repo := &fakeUserRepository{
-		user: &serviceEntity.User{
-			ID:           "1",
-			PasswordHash: hashPassword(t, "correct-password"),
-		},
-	}
-	svc := NewUserService(repo)
-
-	_, err := svc.UpdateProfile(context.Background(), "1", serviceEntity.ProfileInput{
-		Name:            "New Name",
-		Email:           "new@example.com",
-		Phone:           "+15550001111",
-		CurrentPassword: "wrong-password",
-	})
-
-	if !errors.Is(err, errorsx.ErrInvalidCredentials) {
-		t.Errorf("got error %v, want %v", err, errorsx.ErrInvalidCredentials)
-	}
-	if repo.updateCalled {
-		t.Error("expected repository update not to be called after failed password check")
-	}
-}
-
 func TestUserService_UpdateProfile_NotFound(t *testing.T) {
-	repo := &fakeUserRepository{err: errorsx.ErrUserNotFound}
+	repo := &fakeUserRepository{updateErr: errorsx.ErrUserNotFound}
 	svc := NewUserService(repo)
 
 	_, err := svc.UpdateProfile(context.Background(), "missing-id", serviceEntity.ProfileInput{
-		Name:            "New Name",
-		Email:           "new@example.com",
-		Phone:           "+15550001111",
-		CurrentPassword: "any-password",
+		Name:  "New Name",
+		Email: "new@example.com",
+		Phone: "+15550001111",
 	})
 
 	if !errors.Is(err, errorsx.ErrUserNotFound) {
@@ -246,6 +228,31 @@ func TestUserService_UpdatePassword_NotFound(t *testing.T) {
 	svc := NewUserService(repo)
 
 	err := svc.UpdatePassword(context.Background(), "missing-id", "old-password", "new-password")
+
+	if !errors.Is(err, errorsx.ErrUserNotFound) {
+		t.Errorf("got error %v, want %v", err, errorsx.ErrUserNotFound)
+	}
+}
+
+func TestUserService_DeleteProfile_Success(t *testing.T) {
+	repo := &fakeUserRepository{}
+	svc := NewUserService(repo)
+
+	err := svc.DeleteProfile(context.Background(), "1")
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !repo.deleteCalled {
+		t.Error("expected repository DeleteProfile to be called")
+	}
+}
+
+func TestUserService_DeleteProfile_NotFound(t *testing.T) {
+	repo := &fakeUserRepository{deleteErr: errorsx.ErrUserNotFound}
+	svc := NewUserService(repo)
+
+	err := svc.DeleteProfile(context.Background(), "missing-id")
 
 	if !errors.Is(err, errorsx.ErrUserNotFound) {
 		t.Errorf("got error %v, want %v", err, errorsx.ErrUserNotFound)

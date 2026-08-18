@@ -29,7 +29,7 @@ func (h *Handler) Profile(c *gin.Context) {
 		Name:  usr.Name,
 		Email: usr.Email,
 		Phone: usr.Phone,
-		Roles: rolesToStrings(usr.Roles),
+		Roles: service.RolesToStrings(usr.Roles),
 	})
 }
 
@@ -70,7 +70,7 @@ func (h *Handler) UpdateProfile(c *gin.Context) {
 		Name:  usr.Name,
 		Email: usr.Email,
 		Phone: usr.Phone,
-		Roles: rolesToStrings(usr.Roles),
+		Roles: service.RolesToStrings(usr.Roles),
 	})
 }
 

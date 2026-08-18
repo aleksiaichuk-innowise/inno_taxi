@@ -50,16 +50,8 @@ func (h *Handler) Register(c *gin.Context) {
 		Name:  user.Name,
 		Email: user.Email,
 		Phone: user.Phone,
-		Roles: rolesToStrings(user.Roles),
+		Roles: serviceEntity.RolesToStrings(user.Roles),
 	})
-}
-
-func rolesToStrings(roles []serviceEntity.Role) []string {
-	out := make([]string, len(roles))
-	for i, r := range roles {
-		out[i] = string(r)
-	}
-	return out
 }
 
 func (h *Handler) VerifyCredentials(c *gin.Context) {
@@ -91,6 +83,6 @@ func (h *Handler) VerifyCredentials(c *gin.Context) {
 		Name:  user.Name,
 		Email: user.Email,
 		Phone: user.Phone,
-		Roles: rolesToStrings(user.Roles),
+		Roles: serviceEntity.RolesToStrings(user.Roles),
 	})
 }

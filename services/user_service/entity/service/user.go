@@ -20,6 +20,14 @@ func (r Role) IsValid() bool {
 	}
 }
 
+func RolesToStrings(roles []Role) []string {
+	out := make([]string, len(roles))
+	for i, r := range roles {
+		out[i] = string(r)
+	}
+	return out
+}
+
 type User struct {
 	ID           string
 	Name         string

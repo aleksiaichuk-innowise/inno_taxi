@@ -8,7 +8,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	serviceEntity "github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/entity/service"
-	"github.com/aleksiaichuk-innowise/inno_taxi/shared/errorsx"
+	"github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/errorsx"
 )
 
 type fakeUserRepository struct {

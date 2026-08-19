@@ -6,7 +6,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/v2/bson"
 
-	"github.com/aleksiaichuk-innowise/inno_taxi/shared/errorsx"
+	"github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/errorsx"
 )
 
 func (r UserRepository) AddRole(ctx context.Context, id, role string) error {

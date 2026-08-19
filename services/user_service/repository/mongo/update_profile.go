@@ -11,7 +11,7 @@ import (
 
 	repoEntity "github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/entity/repository"
 	serviceEntity "github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/entity/service"
-	"github.com/aleksiaichuk-innowise/inno_taxi/shared/errorsx"
+	"github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/errorsx"
 )
 
 func (r UserRepository) UpdateProfile(ctx context.Context, id, name, email, phone string) (*serviceEntity.User, error) {

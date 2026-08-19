@@ -18,9 +18,9 @@ import (
 	dbmongo "github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/app/db/mongo"
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/config"
 	serviceEntity "github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/entity/service"
+	"github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/errorsx"
 	mongomigration "github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/migrations/mongo"
 	repomongo "github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/repository/mongo"
-	"github.com/aleksiaichuk-innowise/inno_taxi/shared/errorsx"
 )
 
 var testRepo *repomongo.UserRepository

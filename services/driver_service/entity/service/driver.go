@@ -44,8 +44,3 @@ type Driver struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
-
-type CreateDriverInput struct {
-	UserID   string
-	TaxiType TaxiType
-}

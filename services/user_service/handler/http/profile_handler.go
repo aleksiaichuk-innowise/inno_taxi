@@ -7,7 +7,8 @@ import (
 
 	resp "github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/entity/http"
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/entity/service"
-	"github.com/aleksiaichuk-innowise/inno_taxi/shared/errorsx"
+	"github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/errorsx"
+	sharedErrorsx "github.com/aleksiaichuk-innowise/inno_taxi/shared/errorsx"
 	"github.com/gin-gonic/gin"
 )
 
@@ -17,10 +18,10 @@ func (h *Handler) Profile(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, errorsx.ErrUserNotFound):
-			c.JSON(http.StatusNotFound, errorsx.HttpErrResp{Message: err.Error()})
+			c.JSON(http.StatusNotFound, sharedErrorsx.HttpErrResp{Message: err.Error()})
 		default:
 			slog.Error("get profile", "error", err)
-			c.JSON(http.StatusInternalServerError, errorsx.HttpErrResp{Message: errorsx.ErrInternal.Error()})
+			c.JSON(http.StatusInternalServerError, sharedErrorsx.HttpErrResp{Message: sharedErrorsx.ErrInternal.Error()})
 		}
 		return
 	}
@@ -37,11 +38,11 @@ func (h *Handler) UpdateProfile(c *gin.Context) {
 	id := c.GetString("userID")
 	var req resp.UpdateProfileReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, errorsx.HttpErrResp{Message: err.Error()})
+		c.JSON(http.StatusBadRequest, sharedErrorsx.HttpErrResp{Message: err.Error()})
 		return
 	}
 	if err := h.validate.Struct(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, errorsx.HttpErrResp{Message: err.Error()})
+		c.JSON(http.StatusUnprocessableEntity, sharedErrorsx.HttpErrResp{Message: err.Error()})
 		return
 	}
 
@@ -55,12 +56,12 @@ func (h *Handler) UpdateProfile(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, errorsx.ErrUserNotFound):
-			c.JSON(http.StatusNotFound, errorsx.HttpErrResp{Message: err.Error()})
+			c.JSON(http.StatusNotFound, sharedErrorsx.HttpErrResp{Message: err.Error()})
 		case errors.Is(err, errorsx.ErrUserAlreadyExists):
-			c.JSON(http.StatusConflict, errorsx.HttpErrResp{Message: err.Error()})
+			c.JSON(http.StatusConflict, sharedErrorsx.HttpErrResp{Message: err.Error()})
 		default:
 			slog.Error("update profile", "error", err)
-			c.JSON(http.StatusInternalServerError, errorsx.HttpErrResp{Message: errorsx.ErrInternal.Error()})
+			c.JSON(http.StatusInternalServerError, sharedErrorsx.HttpErrResp{Message: sharedErrorsx.ErrInternal.Error()})
 		}
 		return
 	}
@@ -78,11 +79,11 @@ func (h *Handler) UpdatePassword(c *gin.Context) {
 	id := c.GetString("userID")
 	var req resp.UpdatePasswordReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, errorsx.HttpErrResp{Message: err.Error()})
+		c.JSON(http.StatusBadRequest, sharedErrorsx.HttpErrResp{Message: err.Error()})
 		return
 	}
 	if err := h.validate.Struct(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, errorsx.HttpErrResp{Message: err.Error()})
+		c.JSON(http.StatusUnprocessableEntity, sharedErrorsx.HttpErrResp{Message: err.Error()})
 		return
 	}
 
@@ -91,12 +92,12 @@ func (h *Handler) UpdatePassword(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, errorsx.ErrUserNotFound):
-			c.JSON(http.StatusNotFound, errorsx.HttpErrResp{Message: err.Error()})
+			c.JSON(http.StatusNotFound, sharedErrorsx.HttpErrResp{Message: err.Error()})
 		case errors.Is(err, errorsx.ErrInvalidCredentials):
-			c.JSON(http.StatusUnauthorized, errorsx.HttpErrResp{Message: err.Error()})
+			c.JSON(http.StatusUnauthorized, sharedErrorsx.HttpErrResp{Message: err.Error()})
 		default:
 			slog.Error("update profile", "error", err)
-			c.JSON(http.StatusInternalServerError, errorsx.HttpErrResp{Message: errorsx.ErrInternal.Error()})
+			c.JSON(http.StatusInternalServerError, sharedErrorsx.HttpErrResp{Message: sharedErrorsx.ErrInternal.Error()})
 		}
 		return
 	}
@@ -109,10 +110,10 @@ func (h *Handler) DeleteProfile(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, errorsx.ErrUserNotFound):
-			c.JSON(http.StatusNotFound, errorsx.HttpErrResp{Message: err.Error()})
+			c.JSON(http.StatusNotFound, sharedErrorsx.HttpErrResp{Message: err.Error()})
 		default:
 			slog.Error("delete profile", "error", err)
-			c.JSON(http.StatusInternalServerError, errorsx.HttpErrResp{Message: errorsx.ErrInternal.Error()})
+			c.JSON(http.StatusInternalServerError, sharedErrorsx.HttpErrResp{Message: sharedErrorsx.ErrInternal.Error()})
 		}
 		return
 	}

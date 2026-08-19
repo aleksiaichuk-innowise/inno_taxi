@@ -6,7 +6,7 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/aleksiaichuk-innowise/inno_taxi/shared/errorsx"
+	"github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/errorsx"
 )
 
 func (s UserService) UpdatePassword(ctx context.Context, id string, currentPasswd string, newPasswd string) error {

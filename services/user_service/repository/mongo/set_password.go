@@ -9,7 +9,7 @@ import (
 	drivermongo "go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 
-	"github.com/aleksiaichuk-innowise/inno_taxi/shared/errorsx"
+	"github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/errorsx"
 )
 
 func (r UserRepository) SetPassword(ctx context.Context, id string, password string) (err error) {

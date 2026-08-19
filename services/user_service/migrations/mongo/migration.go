@@ -19,7 +19,7 @@ var All = []Migration{
 		Version: 1,
 		Name:    "unique_index_email",
 		Up: func(ctx context.Context, db *mongo.Database) error {
-			_, err := db.Collection("users").Indexes().CreateOne(ctx, mongo.IndexModel{
+			_, err := db.Collection(driver).Indexes().CreateOne(ctx, mongo.IndexModel{
 				Keys:    bson.D{{Key: "email", Value: 1}},
 				Options: options.Index().SetUnique(true).SetName("uniq_email"),
 			})

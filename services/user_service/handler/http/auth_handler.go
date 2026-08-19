@@ -7,7 +7,8 @@ import (
 
 	httpEntity "github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/entity/http"
 	serviceEntity "github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/entity/service"
-	"github.com/aleksiaichuk-innowise/inno_taxi/shared/errorsx"
+	"github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/errorsx"
+	sharedErrorsx "github.com/aleksiaichuk-innowise/inno_taxi/shared/errorsx"
 
 	"github.com/gin-gonic/gin"
 )
@@ -15,11 +16,11 @@ import (
 func (h *Handler) Register(c *gin.Context) {
 	var req httpEntity.RegisterReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, errorsx.HttpErrResp{Message: err.Error()})
+		c.JSON(http.StatusBadRequest, sharedErrorsx.HttpErrResp{Message: err.Error()})
 		return
 	}
 	if err := h.validate.Struct(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, errorsx.HttpErrResp{Message: err.Error()})
+		c.JSON(http.StatusUnprocessableEntity, sharedErrorsx.HttpErrResp{Message: err.Error()})
 		return
 	}
 
@@ -35,12 +36,12 @@ func (h *Handler) Register(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, errorsx.ErrUserAlreadyExists):
-			c.JSON(http.StatusConflict, errorsx.HttpErrResp{Message: err.Error()})
+			c.JSON(http.StatusConflict, sharedErrorsx.HttpErrResp{Message: err.Error()})
 		case errors.Is(err, errorsx.ErrInvalidRole):
-			c.JSON(http.StatusUnprocessableEntity, errorsx.HttpErrResp{Message: err.Error()})
+			c.JSON(http.StatusUnprocessableEntity, sharedErrorsx.HttpErrResp{Message: err.Error()})
 		default:
 			slog.Error("register: create user", "error", err)
-			c.JSON(http.StatusInternalServerError, errorsx.HttpErrResp{Message: errorsx.ErrInternal.Error()})
+			c.JSON(http.StatusInternalServerError, sharedErrorsx.HttpErrResp{Message: sharedErrorsx.ErrInternal.Error()})
 		}
 		return
 	}
@@ -57,11 +58,11 @@ func (h *Handler) Register(c *gin.Context) {
 func (h *Handler) VerifyCredentials(c *gin.Context) {
 	var req httpEntity.VerifyCredentialsReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, errorsx.HttpErrResp{Message: err.Error()})
+		c.JSON(http.StatusBadRequest, sharedErrorsx.HttpErrResp{Message: err.Error()})
 		return
 	}
 	if err := h.validate.Struct(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, errorsx.HttpErrResp{Message: err.Error()})
+		c.JSON(http.StatusUnprocessableEntity, sharedErrorsx.HttpErrResp{Message: err.Error()})
 		return
 	}
 
@@ -69,11 +70,11 @@ func (h *Handler) VerifyCredentials(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, errorsx.ErrInvalidCredentials):
-			c.JSON(http.StatusUnauthorized, errorsx.HttpErrResp{Message: err.Error()})
+			c.JSON(http.StatusUnauthorized, sharedErrorsx.HttpErrResp{Message: err.Error()})
 			return
 		default:
 			slog.Error("verify credentials", "error", err)
-			c.JSON(http.StatusInternalServerError, errorsx.HttpErrResp{Message: errorsx.ErrInternal.Error()})
+			c.JSON(http.StatusInternalServerError, sharedErrorsx.HttpErrResp{Message: sharedErrorsx.ErrInternal.Error()})
 			return
 		}
 	}

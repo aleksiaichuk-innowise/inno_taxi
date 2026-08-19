@@ -12,7 +12,12 @@ import (
 
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/driver_service/app/db/mongo"
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/driver_service/config"
+	http_handler "github.com/aleksiaichuk-innowise/inno_taxi/services/driver_service/handler/http"
+	mongo_migration "github.com/aleksiaichuk-innowise/inno_taxi/services/driver_service/migrations/mongo"
+	"github.com/aleksiaichuk-innowise/inno_taxi/services/driver_service/repository"
+	"github.com/aleksiaichuk-innowise/inno_taxi/services/driver_service/service"
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 )
 
 func Run(cfg *config.Config) error {
@@ -31,7 +36,19 @@ func Run(cfg *config.Config) error {
 		}
 	}()
 
+	if err := mongo_migration.RunMigrations(ctx, *mongoConn); err != nil {
+		return fmt.Errorf("run migrations: %w", err)
+	}
+
+	repo := repository.NewDriverRepository(*mongoConn)
+	s := service.NewDriverService(repo)
+
 	router := gin.Default()
+
+	v := validator.New()
+	h := http_handler.NewDriverHandler(s, v)
+
+	registerRoutes(router, h)
 
 	srv := &http.Server{
 		Addr:    fmt.Sprintf("%s:%s", cfg.Host.Host, cfg.Host.Port),
@@ -57,4 +74,8 @@ func Run(cfg *config.Config) error {
 		slog.Info("shutdown signal received")
 	}
 	return nil
+}
+
+func registerRoutes(r *gin.Engine, h *http_handler.Handler) {
+	r.POST("/internal/drivers", h.Register)
 }

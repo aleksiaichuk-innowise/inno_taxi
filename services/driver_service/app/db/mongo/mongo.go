@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/aleksiaichuk-innowise/inno_taxi/services/driver_service/config"
+	shared "github.com/aleksiaichuk-innowise/inno_taxi/shared/config"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
@@ -15,7 +15,7 @@ type MongoClient struct {
 	Database *mongo.Database
 }
 
-func New(ctx context.Context, cfg *config.MongoConfig) (*MongoClient, error) {
+func New(ctx context.Context, cfg *shared.MongoConfig) (*MongoClient, error) {
 	uri := fmt.Sprintf(
 		"mongodb://%s:%s@%s:%s",
 		cfg.Username, cfg.Password, cfg.Host, cfg.Port,

@@ -1,7 +1,8 @@
 package main
 
 import (
-	"log"
+	"log/slog"
+	"os"
 
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/driver_service/app"
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/driver_service/config"
@@ -10,6 +11,7 @@ import (
 func main() {
 	cfg := config.Load()
 	if err := app.Run(cfg); err != nil {
-		log.Fatal(err)
+		slog.Error("Failed to run driver_service", "error", err)
+		os.Exit(1)
 	}
 }

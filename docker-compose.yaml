@@ -29,5 +29,25 @@ services:
     depends_on:
       mongo:
         condition: service_healthy
+  user_service:
+    build:
+      context: .
+      dockerfile: services/user_service/Dockerfile
+    container_name: taxi-user-service
+    restart: unless-stopped
+    environment:
+      HTTP_US_HOST: 0.0.0.0
+      HTTP_US_PORT: 8080
+      MONGO_US_HOST: mongo
+      MONGO_US_PORT: 27017
+      MONGO_US_DB: ${MONGO_DB:-taxi}
+      MONGO_US_USERNAME: ${MONGO_ROOT_USER:-taxi}
+      MONGO_US_PASSWORD: ${MONGO_ROOT_PASSWORD:-taxi}
+      JWT_SECRET: ${JWT_SECRET:-taxi}
+    ports:
+      - "8080:8080"
+    depends_on:
+      mongo:
+        condition: service_healthy
 volumes:
   mongo-data:

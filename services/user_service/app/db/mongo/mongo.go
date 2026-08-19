@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/config"
+	"github.com/aleksiaichuk-innowise/inno_taxi/shared/config"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )

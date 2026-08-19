@@ -1,26 +1,14 @@
 package config
 
 import (
-	"os"
-
+	shared "github.com/aleksiaichuk-innowise/inno_taxi/shared/config"
 	"github.com/joho/godotenv"
 )
 
 type Config struct {
-	Mongo *MongoConfig
-	Host  *HostConfig
+	Mongo *shared.MongoConfig
+	Host  *shared.HttpHostConfig
 	JWT   *JWTConfig
-}
-type MongoConfig struct {
-	Host     string `env:"MONGO_HOST"`
-	Port     string `env:"MONGO_PORT"`
-	Database string `env:"MONGO_DB"`
-	Username string `env:"MONGO_USERNAME"`
-	Password string `env:"MONGO_PASSWORD"`
-}
-type HostConfig struct {
-	Host string `env:"HTTP_HOST"`
-	Port string `env:"HTTP_PORT"`
 }
 
 type JWTConfig struct {
@@ -30,26 +18,19 @@ type JWTConfig struct {
 func Load() *Config {
 	_ = godotenv.Load()
 	return &Config{
-		Mongo: &MongoConfig{
-			Host:     getEnv("MONGO_HOST", "localhost"),
-			Port:     getEnv("MONGO_PORT", "27017"),
-			Database: getEnv("MONGO_DB", "test"),
-			Username: getEnv("MONGO_USERNAME", "taxi"),
-			Password: getEnv("MONGO_PASSWORD", "taxi"),
+		Mongo: &shared.MongoConfig{
+			Host:     shared.GetEnvFallback("MONGO_US_HOST", "localhost"),
+			Port:     shared.GetEnvFallback("MONGO_US_PORT", "27017"),
+			Database: shared.GetEnvFallback("MONGO_US_DB", "test"),
+			Username: shared.GetEnvFallback("MONGO_US_USERNAME", "taxi"),
+			Password: shared.GetEnvFallback("MONGO_US_PASSWORD", "taxi"),
 		},
-		Host: &HostConfig{
-			Host: getEnv("HTTP_HOST", "localhost"),
-			Port: getEnv("HTTP_PORT", "8080"),
+		Host: &shared.HttpHostConfig{
+			Host: shared.GetEnvFallback("HTTP_US_HOST", "localhost"),
+			Port: shared.GetEnvFallback("HTTP_US_PORT", "8080"),
 		},
 		JWT: &JWTConfig{
-			Secret: getEnv("JWT_SECRET", "taxi"),
+			Secret: shared.GetEnvFallback("JWT_SECRET", "taxi"),
 		},
 	}
-}
-
-func getEnv(key, fallback string) string {
-	if v, ok := os.LookupEnv(key); ok && v != "" {
-		return v
-	}
-	return fallback
 }

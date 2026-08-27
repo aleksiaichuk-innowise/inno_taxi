@@ -66,3 +66,30 @@ func (r DriverRepository) FindByUserID(ctx context.Context, id string) (service_
 	}
 	return d, nil
 }
+func (r DriverRepository) UpdateStatusByUserID(ctx context.Context, userID, status string) error {
+	filter := bson.M{"user_id": userID}
+	update := bson.M{"$set": bson.M{"status": status, "updated_at": time.Now()}}
+
+	res, err := r.client.Database.Collection(DRIVER_COLLECTION).UpdateOne(ctx, filter, update)
+	if err != nil {
+		return err
+	}
+	if res.MatchedCount == 0 {
+		return errorsx.ErrDriverNotFound
+	}
+	return nil
+}
+
+func (r DriverRepository) UpdateTaxiTypeByUserID(ctx context.Context, userID, status string) error {
+	filter := bson.M{"user_id": userID}
+	update := bson.M{"$set": bson.M{"taxi_type": status, "updated_at": time.Now()}}
+
+	res, err := r.client.Database.Collection(DRIVER_COLLECTION).UpdateOne(ctx, filter, update)
+	if err != nil {
+		return err
+	}
+	if res.MatchedCount == 0 {
+		return errorsx.ErrDriverNotFound
+	}
+	return nil
+}

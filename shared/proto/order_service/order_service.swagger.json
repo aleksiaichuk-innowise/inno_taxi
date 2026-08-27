@@ -1,0 +1,172 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "shared/proto/order_service/order_service.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "OrderService"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/orders": {
+      "post": {
+        "operationId": "OrderService_CreateOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CreateOrderResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googleRpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateOrderRequest"
+            }
+          }
+        ],
+        "tags": [
+          "OrderService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "googleRpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "orderV1Location": {
+      "type": "object",
+      "properties": {
+        "lat": {
+          "type": "number",
+          "format": "double"
+        },
+        "long": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "orderV1Status": {
+      "type": "string",
+      "enum": [
+        "STATUS_UNSPECIFIED",
+        "STATUS_CREATED",
+        "STATUS_DRIVER_ASSIGNED",
+        "STATUS_IN_PROGRESS",
+        "STATUS_COMPLETED",
+        "STATUS_CANCELLED"
+      ],
+      "default": "STATUS_UNSPECIFIED"
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "v1CreateOrderRequest": {
+      "type": "object",
+      "properties": {
+        "taxiType": {
+          "$ref": "#/definitions/v1TaxiType"
+        },
+        "start": {
+          "$ref": "#/definitions/orderV1Location"
+        },
+        "destination": {
+          "$ref": "#/definitions/orderV1Location"
+        }
+      }
+    },
+    "v1CreateOrderResponse": {
+      "type": "object",
+      "properties": {
+        "order": {
+          "$ref": "#/definitions/v1Order"
+        }
+      }
+    },
+    "v1Order": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "userId": {
+          "type": "string"
+        },
+        "driverId": {
+          "type": "string"
+        },
+        "taxiType": {
+          "$ref": "#/definitions/v1TaxiType"
+        },
+        "start": {
+          "$ref": "#/definitions/orderV1Location"
+        },
+        "destination": {
+          "$ref": "#/definitions/orderV1Location"
+        },
+        "status": {
+          "$ref": "#/definitions/orderV1Status"
+        },
+        "price": {
+          "type": "number",
+          "format": "double"
+        },
+        "createdAt": {
+          "type": "string"
+        }
+      }
+    },
+    "v1TaxiType": {
+      "type": "string",
+      "enum": [
+        "TAXI_TYPE_UNSPECIFIED",
+        "TAXI_TYPE_ECONOMY",
+        "TAXI_TYPE_COMFORT",
+        "TAXI_TYPE_BUSINESS"
+      ],
+      "default": "TAXI_TYPE_UNSPECIFIED"
+    }
+  }
+}

@@ -96,9 +96,6 @@ func (r DriverRepository) UpdateTaxiTypeByUserID(ctx context.Context, userID, st
 
 func (r *DriverRepository) FindByStatus(ctx context.Context, status service_dto.Status) ([]service_dto.Driver, error) {
 	filter := bson.M{}
-	if status != "" {
-		filter["status"] = string(status)
-	}
 
 	cursor, err := r.client.Database.Collection(DRIVER_COLLECTION).Find(ctx, filter)
 	if err != nil {

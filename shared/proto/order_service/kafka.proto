@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package order.kafka.v1;
+
+option go_package = "github.com/aleksiaichuk-innowise/inno_taxi/shared/proto/order_service;order_service";
+
+import "shared/proto/order_service/order_service.proto";
+
+message OrderCreatedEvent {
+  string order_id = 1;
+  string user_id = 2;
+  order.v1.TaxiType taxi_type = 3;
+  order.v1.Location pickup = 4;
+  order.v1.Location destination = 5;
+  order.v1.Status status = 6;
+  string created_at = 7;
+}

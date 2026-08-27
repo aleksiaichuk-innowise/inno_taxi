@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package order.v1;
+
+option go_package = "github.com/aleksiaichuk-innowise/inno_taxi/shared/proto/order_service;order_service";
+
+import "google/api/annotations.proto";
+
+enum TaxiType {
+    TAXI_TYPE_UNSPECIFIED = 0;
+    TAXI_TYPE_ECONOMY = 1;
+    TAXI_TYPE_COMFORT = 2;
+    TAXI_TYPE_BUSINESS = 3;
+}
+
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+  STATUS_CREATED = 1;
+  STATUS_DRIVER_ASSIGNED = 2;
+  STATUS_IN_PROGRESS = 3;
+  STATUS_COMPLETED = 4;
+  STATUS_CANCELLED = 5;
+}
+
+
+
+message CreateOrderRequest {
+  TaxiType taxi_type = 1;
+  Location start = 2;
+  Location destination = 3;
+}
+
+message Order {
+  string id = 1;
+  string user_id = 2;
+  string driver_id = 3;
+  TaxiType taxi_type = 4;
+  Location start = 5;
+  Location destination = 6;
+  Status status = 7;
+  double price = 8;
+  string created_at  = 9;
+}
+message CreateOrderResponse {
+  Order order = 1;
+}
+
+message Location {
+  double lat = 1;
+  double long =2;
+}
+
+
+service OrderService {
+  rpc CreateOrder(CreateOrderRequest) returns (CreateOrderResponse) {
+    option (google.api.http) = {
+      post: "/v1/orders"
+      body: "*"
+    };
+  }
+}

@@ -149,9 +149,9 @@
         "status": {
           "$ref": "#/definitions/orderV1Status"
         },
-        "price": {
-          "type": "number",
-          "format": "double"
+        "priceMinorUnits": {
+          "type": "string",
+          "format": "int64"
         },
         "createdAt": {
           "type": "string"

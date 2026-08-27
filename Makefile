@@ -71,4 +71,30 @@ proto-order: ## Generate Go/gRPC-Gateway/OpenAPI code from shared/proto/order_se
 		-I shared/third_party/googleapis \
 		shared/proto/order_service/order_service.proto shared/proto/order_service/kafka.proto
 
-.PHONY: help mongo-up build-user run-user test-user test-user-integration build-driver run-driver test-driver build-order run-order test-order test-order-integration proto-tools proto-order
+## --- Postgres migrations (order_service, via goose) ---
+
+MIGRATIONS_DIR := services/order_service/migrations/postgres
+
+PG_ORDER_HOST ?= localhost
+PG_ORDER_PORT ?= 5433
+PG_ORDER_USER ?= postgres
+PG_ORDER_PASS ?= postgres
+PG_ORDER_DATABASE ?= order
+PG_ORDER_DSN := postgres://$(PG_ORDER_USER):$(PG_ORDER_PASS)@$(PG_ORDER_HOST):$(PG_ORDER_PORT)/$(PG_ORDER_DATABASE)?sslmode=disable
+
+goose-tools: ## Install the goose CLI
+	go install github.com/pressly/goose/v3/cmd/goose@latest
+
+migrate-order-create: ## Create a new order_service migration (usage: make migrate-order-create name=add_foo)
+	goose -dir $(MIGRATIONS_DIR) create $(name) sql
+
+migrate-order-up: ## Apply all pending order_service migrations
+	goose -dir $(MIGRATIONS_DIR) postgres "$(PG_ORDER_DSN)" up
+
+migrate-order-down: ## Roll back the last order_service migration
+	goose -dir $(MIGRATIONS_DIR) postgres "$(PG_ORDER_DSN)" down
+
+migrate-order-status: ## Show order_service migration status
+	goose -dir $(MIGRATIONS_DIR) postgres "$(PG_ORDER_DSN)" status
+
+.PHONY: help mongo-up build-user run-user test-user test-user-integration build-driver run-driver test-driver build-order run-order test-order test-order-integration proto-tools proto-order goose-tools migrate-order-create migrate-order-up migrate-order-down migrate-order-status

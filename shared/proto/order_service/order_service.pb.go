@@ -193,18 +193,18 @@ func (x *CreateOrderRequest) GetDestination() *Location {
 }
 
 type Order struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	DriverId      string                 `protobuf:"bytes,3,opt,name=driver_id,json=driverId,proto3" json:"driver_id,omitempty"`
-	TaxiType      TaxiType               `protobuf:"varint,4,opt,name=taxi_type,json=taxiType,proto3,enum=order.v1.TaxiType" json:"taxi_type,omitempty"`
-	Start         *Location              `protobuf:"bytes,5,opt,name=start,proto3" json:"start,omitempty"`
-	Destination   *Location              `protobuf:"bytes,6,opt,name=destination,proto3" json:"destination,omitempty"`
-	Status        Status                 `protobuf:"varint,7,opt,name=status,proto3,enum=order.v1.Status" json:"status,omitempty"`
-	Price         float64                `protobuf:"fixed64,8,opt,name=price,proto3" json:"price,omitempty"`
-	CreatedAt     string                 `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Id              string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	UserId          string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	DriverId        string                 `protobuf:"bytes,3,opt,name=driver_id,json=driverId,proto3" json:"driver_id,omitempty"`
+	TaxiType        TaxiType               `protobuf:"varint,4,opt,name=taxi_type,json=taxiType,proto3,enum=order.v1.TaxiType" json:"taxi_type,omitempty"`
+	Start           *Location              `protobuf:"bytes,5,opt,name=start,proto3" json:"start,omitempty"`
+	Destination     *Location              `protobuf:"bytes,6,opt,name=destination,proto3" json:"destination,omitempty"`
+	Status          Status                 `protobuf:"varint,7,opt,name=status,proto3,enum=order.v1.Status" json:"status,omitempty"`
+	PriceMinorUnits int64                  `protobuf:"varint,8,opt,name=price_minor_units,json=priceMinorUnits,proto3" json:"price_minor_units,omitempty"`
+	CreatedAt       string                 `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *Order) Reset() {
@@ -286,9 +286,9 @@ func (x *Order) GetStatus() Status {
 	return Status_STATUS_UNSPECIFIED
 }
 
-func (x *Order) GetPrice() float64 {
+func (x *Order) GetPriceMinorUnits() int64 {
 	if x != nil {
-		return x.Price
+		return x.PriceMinorUnits
 	}
 	return 0
 }
@@ -404,7 +404,7 @@ const file_shared_proto_order_service_order_service_proto_rawDesc = "" +
 	"\x12CreateOrderRequest\x12/\n" +
 	"\ttaxi_type\x18\x01 \x01(\x0e2\x12.order.v1.TaxiTypeR\btaxiType\x12(\n" +
 	"\x05start\x18\x02 \x01(\v2\x12.order.v1.LocationR\x05start\x124\n" +
-	"\vdestination\x18\x03 \x01(\v2\x12.order.v1.LocationR\vdestination\"\xbd\x02\n" +
+	"\vdestination\x18\x03 \x01(\v2\x12.order.v1.LocationR\vdestination\"\xd3\x02\n" +
 	"\x05Order\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x1b\n" +
@@ -412,8 +412,8 @@ const file_shared_proto_order_service_order_service_proto_rawDesc = "" +
 	"\ttaxi_type\x18\x04 \x01(\x0e2\x12.order.v1.TaxiTypeR\btaxiType\x12(\n" +
 	"\x05start\x18\x05 \x01(\v2\x12.order.v1.LocationR\x05start\x124\n" +
 	"\vdestination\x18\x06 \x01(\v2\x12.order.v1.LocationR\vdestination\x12(\n" +
-	"\x06status\x18\a \x01(\x0e2\x10.order.v1.StatusR\x06status\x12\x14\n" +
-	"\x05price\x18\b \x01(\x01R\x05price\x12\x1d\n" +
+	"\x06status\x18\a \x01(\x0e2\x10.order.v1.StatusR\x06status\x12*\n" +
+	"\x11price_minor_units\x18\b \x01(\x03R\x0fpriceMinorUnits\x12\x1d\n" +
 	"\n" +
 	"created_at\x18\t \x01(\tR\tcreatedAt\"<\n" +
 	"\x13CreateOrderResponse\x12%\n" +

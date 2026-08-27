@@ -38,7 +38,7 @@ message Order {
   Location start = 5;
   Location destination = 6;
   Status status = 7;
-  double price = 8;
+  int64 price_minor_units = 8;
   string created_at  = 9;
 }
 message CreateOrderResponse {

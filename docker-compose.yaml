@@ -29,6 +29,23 @@ services:
     depends_on:
       mongo:
         condition: service_healthy
+  postgres:
+    image: postgres:18
+    container_name: taxi-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${PG_ORDER_USER:-postgres}
+      POSTGRES_PASSWORD: ${PG_ORDER_PASS:-postgres}
+      POSTGRES_DB: ${PG_ORDER_DATABASE:-order}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PG_ORDER_USER:-postgres} -d ${PG_ORDER_DATABASE:-order}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
   user_service:
     build:
       context: .
@@ -51,3 +68,4 @@ services:
         condition: service_healthy
 volumes:
   mongo-data:
+  postgres-data:

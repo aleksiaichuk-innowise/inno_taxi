@@ -12,7 +12,7 @@ type Config struct {
 }
 
 type JWTConfig struct {
-	Secret string `env:"JWT_SECRET"`
+	Secret string
 }
 
 func Load() *Config {

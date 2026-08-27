@@ -3,6 +3,7 @@ package mongo
 import (
 	"context"
 
+	mongo2 "github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/repository/mongo"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
@@ -19,7 +20,7 @@ var All = []Migration{
 		Version: 1,
 		Name:    "unique_index_email",
 		Up: func(ctx context.Context, db *mongo.Database) error {
-			_, err := db.Collection(driver).Indexes().CreateOne(ctx, mongo.IndexModel{
+			_, err := db.Collection(mongo2.UsersCollection).Indexes().CreateOne(ctx, mongo.IndexModel{
 				Keys:    bson.D{{Key: "email", Value: 1}},
 				Options: options.Index().SetUnique(true).SetName("uniq_email"),
 			})
@@ -30,7 +31,7 @@ var All = []Migration{
 		Version: 2,
 		Name:    "unique_index_phone",
 		Up: func(ctx context.Context, db *mongo.Database) error {
-			_, err := db.Collection("users").Indexes().CreateOne(ctx, mongo.IndexModel{
+			_, err := db.Collection(mongo2.UsersCollection).Indexes().CreateOne(ctx, mongo.IndexModel{
 				Keys:    bson.D{{Key: "phone", Value: 1}},
 				Options: options.Index().SetUnique(true).SetName("uniq_phone"),
 			})

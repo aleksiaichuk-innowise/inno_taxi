@@ -14,7 +14,7 @@ import (
 
 func (r UserRepository) FindByLogin(ctx context.Context, login string) (*serviceEntity.User, error) {
 	filter := bson.M{"$or": []bson.M{{"email": login}, {"phone": login}}}
-	res := r.client.Database.Collection(usersCollection).FindOne(ctx, filter)
+	res := r.client.Database.Collection(UsersCollection).FindOne(ctx, filter)
 
 	var doc repoEntity.User
 	if err := res.Decode(&doc); err != nil {

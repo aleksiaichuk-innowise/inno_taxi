@@ -9,8 +9,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
-
-	"github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/entity/service"
 )
 
 func init() {
@@ -141,7 +139,7 @@ func TestAuth_ExpiredToken(t *testing.T) {
 	}
 }
 
-func newRequireRoleTestRouter(secret string, role service.Role) *gin.Engine {
+func newRequireRoleTestRouter(secret string, role string) *gin.Engine {
 	r := gin.New()
 	r.Use(Auth(secret))
 	r.Use(RequireRole(role))
@@ -153,7 +151,7 @@ func newRequireRoleTestRouter(secret string, role service.Role) *gin.Engine {
 
 func TestRequireRole_Allowed(t *testing.T) {
 	secret := "test-secret"
-	r := newRequireRoleTestRouter(secret, service.RoleAdmin)
+	r := newRequireRoleTestRouter(secret, "admin")
 
 	token := signToken(t, secret, &CustomClaims{
 		Roles: []string{"admin"},
@@ -172,7 +170,7 @@ func TestRequireRole_Allowed(t *testing.T) {
 
 func TestRequireRole_MissingRole(t *testing.T) {
 	secret := "test-secret"
-	r := newRequireRoleTestRouter(secret, service.RoleAdmin)
+	r := newRequireRoleTestRouter(secret, "admin")
 
 	token := signToken(t, secret, &CustomClaims{
 		Roles: []string{"user"},
@@ -191,7 +189,7 @@ func TestRequireRole_MissingRole(t *testing.T) {
 
 func TestRequireRole_NoRolesClaim(t *testing.T) {
 	secret := "test-secret"
-	r := newRequireRoleTestRouter(secret, service.RoleAdmin)
+	r := newRequireRoleTestRouter(secret, "admin")
 
 	token := signToken(t, secret, &CustomClaims{
 		RegisteredClaims: jwt.RegisteredClaims{

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/driver_service/app/db/mongo"
@@ -50,4 +51,18 @@ func (r DriverRepository) CreateDriver(ctx context.Context, dto *service_dto.Cre
 		UpdatedAt: doc.UpdatedAt,
 	}, nil
 
+}
+
+func (r DriverRepository) FindByUserID(ctx context.Context, id string) (service_dto.Driver, error) {
+	filter := bson.M{"user_id": id}
+	res := r.client.Database.Collection(DRIVER_COLLECTION).FindOne(ctx, filter)
+
+	var d service_dto.Driver
+	if err := res.Decode(&d); err != nil {
+		if errors.Is(err, drivermongo.ErrNoDocuments) {
+			return service_dto.Driver{}, errorsx.ErrDriverNotFound
+		}
+		return service_dto.Driver{}, err
+	}
+	return d, nil
 }

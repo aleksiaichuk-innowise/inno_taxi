@@ -78,4 +78,5 @@ func Run(cfg *config.Config) error {
 
 func registerRoutes(r *gin.Engine, h *http_handler.Handler) {
 	r.POST("/internal/drivers", h.Register)
+	r.GET("/profile/:user_id", h.Profile)
 }

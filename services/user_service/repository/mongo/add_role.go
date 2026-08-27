@@ -23,7 +23,7 @@ func (r UserRepository) AddRole(ctx context.Context, id, role string) error {
 			"updated_at": time.Now(),
 		},
 	}
-	res, err := r.client.Database.Collection(usersCollection).UpdateOne(ctx, filter, update)
+	res, err := r.client.Database.Collection(UsersCollection).UpdateOne(ctx, filter, update)
 	if err != nil {
 		return err
 	}

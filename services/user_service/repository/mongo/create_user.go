@@ -23,7 +23,7 @@ func (r UserRepository) CreateUser(ctx context.Context, user *serviceEntity.User
 		UpdatedAt:    user.UpdatedAt,
 	}
 
-	if _, err := r.client.Database.Collection(usersCollection).InsertOne(ctx, doc); err != nil {
+	if _, err := r.client.Database.Collection(UsersCollection).InsertOne(ctx, doc); err != nil {
 		if drivermongo.IsDuplicateKeyError(err) {
 			return nil, errorsx.ErrUserAlreadyExists
 		}

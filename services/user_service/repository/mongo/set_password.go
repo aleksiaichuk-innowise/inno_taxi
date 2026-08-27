@@ -24,7 +24,7 @@ func (r UserRepository) SetPassword(ctx context.Context, id string, password str
 	}}
 	opts := options.FindOneAndUpdate()
 
-	res := r.client.Database.Collection(usersCollection).FindOneAndUpdate(ctx, filter, update, opts)
+	res := r.client.Database.Collection(UsersCollection).FindOneAndUpdate(ctx, filter, update, opts)
 	if err := res.Err(); err != nil {
 		if errors.Is(err, drivermongo.ErrNoDocuments) {
 			return errorsx.ErrUserNotFound

@@ -17,11 +17,11 @@ import (
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/config"
 	entity "github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/entity/service"
 	httphandler "github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/handler/http"
-	"github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/handler/http/middleware"
 	mongomigration "github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/migrations/mongo"
 	mongorepo "github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/repository/mongo"
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/service"
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/validation"
+	"github.com/aleksiaichuk-innowise/inno_taxi/shared/transport/http/middleware"
 )
 
 func Run(cfg *config.Config) error {
@@ -107,6 +107,6 @@ func registerRoutes(r *gin.Engine, h *httphandler.Handler, cfg *config.Config) {
 	admin := r.Group("/admin")
 	admin.Use(middleware.Auth(cfg.JWT.Secret))
 	{
-		admin.POST("/users/:id/analyst-role", middleware.RequireRole(entity.RoleAdmin), h.AssignRoleAnalytic)
+		admin.POST("/users/:id/analyst-role", middleware.RequireRole(string(entity.RoleAdmin)), h.AssignRoleAnalytic)
 	}
 }

@@ -18,7 +18,7 @@ func (r UserRepository) FindByID(ctx context.Context, id string) (*serviceEntity
 		return nil, errorsx.ErrUserNotFound
 	}
 	filter := bson.M{"_id": objID, "deleted_at": nil}
-	res := r.client.Database.Collection(usersCollection).FindOne(ctx, filter)
+	res := r.client.Database.Collection(UsersCollection).FindOne(ctx, filter)
 	var doc repoEntity.User
 	if err := res.Decode(&doc); err != nil {
 		if errors.Is(err, drivermongo.ErrNoDocuments) {

@@ -29,7 +29,7 @@ func (r UserRepository) UpdateProfile(ctx context.Context, id, name, email, phon
 	}}
 	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
 
-	res := r.client.Database.Collection(usersCollection).FindOneAndUpdate(ctx, filter, update, opts)
+	res := r.client.Database.Collection(UsersCollection).FindOneAndUpdate(ctx, filter, update, opts)
 
 	var doc repoEntity.User
 	if err := res.Decode(&doc); err != nil {

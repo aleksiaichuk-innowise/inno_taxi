@@ -25,7 +25,7 @@ func (r UserRepository) DeleteProfile(ctx context.Context, id string) (err error
 		},
 	}
 
-	res, err := r.client.Database.Collection(usersCollection).UpdateOne(ctx, filter, update)
+	res, err := r.client.Database.Collection(UsersCollection).UpdateOne(ctx, filter, update)
 	if err != nil {
 		return err
 	}

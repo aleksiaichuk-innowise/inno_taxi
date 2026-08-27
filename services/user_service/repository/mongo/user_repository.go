@@ -6,7 +6,7 @@ import (
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/service"
 )
 
-const usersCollection = "users"
+const UsersCollection = "users"
 
 var _ service.UserRepository = (*UserRepository)(nil)
 

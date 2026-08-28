@@ -12,6 +12,7 @@ type Config struct {
 	DbConn    shared.PostgresConfig
 	EsConn    shared.ElasticsearchConfig
 	KafkaConf shared.KafkaConfig
+	Grpc      *shared.GrpcServerConfig
 	JWT       *JWTConfig
 }
 
@@ -46,6 +47,13 @@ func Load() *Config {
 			Brokers:  strings.Split(shared.GetEnvFallback("KAFKA_BROKERS", "localhost:9092"), ","),
 			Username: shared.GetEnvFallback("KAFKA_USERNAME", ""),
 			Password: shared.GetEnvFallback("KAFKA_PASSWORD", ""),
+		},
+		Grpc: &shared.GrpcServerConfig{
+			Host: shared.GetEnvFallback("GRPC_ORDER_HOST", "localhost"),
+			Port: shared.GetEnvFallback("GRPC_ORDER_PORT", "9082"),
+
+			MaxConnectionIdle: 15 * time.Minute,
+			Timeout:           10 * time.Second,
 		},
 		JWT: &JWTConfig{
 			Secret: shared.GetEnvFallback("JWT_SECRET", "taxi"),

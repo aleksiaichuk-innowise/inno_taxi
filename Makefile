@@ -11,8 +11,8 @@ help: ## Show help
 
 ## --- Infra ---
 
-mongo-up: ## Start the local Mongo container (docker compose)
-	docker compose up mongo
+up: ## Start docker env
+	docker compose up -d
 
 ## --- user_service ---
 

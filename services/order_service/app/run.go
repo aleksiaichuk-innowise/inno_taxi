@@ -15,6 +15,7 @@ import (
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/order_service/config"
 	grpc_srv "github.com/aleksiaichuk-innowise/inno_taxi/services/order_service/handler/grpc"
 	"github.com/aleksiaichuk-innowise/inno_taxi/shared/proto/order_service"
+	"github.com/aleksiaichuk-innowise/inno_taxi/shared/transport/grpc/interceptor"
 	"google.golang.org/grpc"
 )
 
@@ -44,7 +45,9 @@ func Run(cfg *config.Config) error {
 		return err
 	}
 
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(grpc.UnaryInterceptor(
+		interceptor.AuthInterceptor(cfg.JWT.Secret),
+	))
 	order_service.RegisterOrderServiceServer(grpcServer, grpc_srv.NewOrderServer())
 
 	go func() {

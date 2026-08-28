@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
+	"net/http"
 	"os/signal"
 	"syscall"
 	"time"
@@ -18,7 +19,9 @@ import (
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/order_service/service"
 	"github.com/aleksiaichuk-innowise/inno_taxi/shared/proto/order_service"
 	"github.com/aleksiaichuk-innowise/inno_taxi/shared/transport/grpc/interceptor"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 func Run(cfg *config.Config) error {
@@ -65,8 +68,34 @@ func Run(cfg *config.Config) error {
 		}
 	}()
 
+	// -- GRPC-gateway
+	gw := runtime.NewServeMux()
+	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
+	err = order_service.RegisterOrderServiceHandlerFromEndpoint(ctx, gw, grpcListener.Addr().String(), opts)
+	if err != nil {
+		slog.Error("order service failed to register gateway", "error", err)
+		return err
+	}
+
+	httpAddr := fmt.Sprintf("%s:%s", cfg.HttpHost.Host, cfg.HttpHost.Port)
+	httpServer := &http.Server{
+		Addr:    httpAddr,
+		Handler: gw,
+	}
+
+	go func() {
+		slog.Info(fmt.Sprintf("http gateway listening on %s", httpAddr))
+		if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			slog.Error("http gateway failed to serve", "error", err)
+		}
+	}()
+
+	// -- Graceful shutdown
 	<-ctx.Done()
 	slog.Info("shutdown signal received, stopping order service...")
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
 	stopped := make(chan struct{})
 	go func() {
@@ -74,8 +103,9 @@ func Run(cfg *config.Config) error {
 		close(stopped)
 	}()
 
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	if err := httpServer.Shutdown(shutdownCtx); err != nil {
+		slog.Warn("http gateway shutdown error", "error", err)
+	}
 
 	select {
 	case <-stopped:

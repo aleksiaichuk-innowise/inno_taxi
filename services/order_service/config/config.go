@@ -13,6 +13,7 @@ type Config struct {
 	EsConn    shared.ElasticsearchConfig
 	KafkaConf shared.KafkaConfig
 	Grpc      *shared.GrpcServerConfig
+	HttpHost  shared.HttpHostConfig
 	JWT       *JWTConfig
 }
 
@@ -54,6 +55,10 @@ func Load() *Config {
 
 			MaxConnectionIdle: 15 * time.Minute,
 			Timeout:           10 * time.Second,
+		},
+		HttpHost: shared.HttpHostConfig{
+			Host: shared.GetEnvFallback("HTTP_ORDER_HOST", "localhost"),
+			Port: shared.GetEnvFallback("HTTP_ORDER_PORT", "8080"),
 		},
 		JWT: &JWTConfig{
 			Secret: shared.GetEnvFallback("JWT_SECRET", "taxi"),

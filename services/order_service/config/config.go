@@ -36,7 +36,7 @@ func Load() *Config {
 			MaxIdleConnections:    5 * time.Minute,
 		},
 		EsConn: shared.ElasticsearchConfig{
-			Addresses: strings.Split(shared.GetEnvFallback("ES_ORDER_HOST", "localhost:9200"), ","),
+			Addresses: strings.Split(shared.GetEnvFallback("ES_ORDER_HOST", "http://localhost:9200"), ","),
 			Username:  shared.GetEnvFallback("ES_ORDER_USER", "elastic"),
 			Password:  shared.GetEnvFallback("ES_ORDER_PASS", "elastic"),
 

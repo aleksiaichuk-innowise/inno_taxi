@@ -22,8 +22,6 @@ enum Status {
   STATUS_CANCELLED = 5;
 }
 
-
-
 message CreateOrderRequest {
   TaxiType taxi_type = 1;
   Location start = 2;

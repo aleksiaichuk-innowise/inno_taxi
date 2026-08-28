@@ -16,6 +16,11 @@ type contextKey string
 
 const UserIDKey contextKey = "userID"
 
+func UserIDFromContext(ctx context.Context) (string, bool) {
+	userID, ok := ctx.Value(UserIDKey).(string)
+	return userID, ok
+}
+
 func AuthInterceptor(secret string) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		md, ok := metadata.FromIncomingContext(ctx)

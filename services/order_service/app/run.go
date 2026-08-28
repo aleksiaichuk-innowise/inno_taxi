@@ -14,6 +14,8 @@ import (
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/order_service/app/db/postgres"
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/order_service/config"
 	grpc_srv "github.com/aleksiaichuk-innowise/inno_taxi/services/order_service/handler/grpc"
+	"github.com/aleksiaichuk-innowise/inno_taxi/services/order_service/repository/pg_repo"
+	"github.com/aleksiaichuk-innowise/inno_taxi/services/order_service/service"
 	"github.com/aleksiaichuk-innowise/inno_taxi/shared/proto/order_service"
 	"github.com/aleksiaichuk-innowise/inno_taxi/shared/transport/grpc/interceptor"
 	"google.golang.org/grpc"
@@ -37,6 +39,12 @@ func Run(cfg *config.Config) error {
 
 	slog.Info("order service starting")
 
+	// -- repo
+	repo := pg_repo.NewPgRepo(dbConn)
+
+	// services
+	orderService := service.NewOrderService(repo)
+
 	// -- Grpc
 
 	grpcListener, err := net.Listen("tcp", fmt.Sprintf("%s:%s", cfg.Grpc.Host, cfg.Grpc.Port))
@@ -48,7 +56,7 @@ func Run(cfg *config.Config) error {
 	grpcServer := grpc.NewServer(grpc.UnaryInterceptor(
 		interceptor.AuthInterceptor(cfg.JWT.Secret),
 	))
-	order_service.RegisterOrderServiceServer(grpcServer, grpc_srv.NewOrderServer())
+	order_service.RegisterOrderServiceServer(grpcServer, grpc_srv.NewOrderServer(orderService))
 
 	go func() {
 		slog.Info(fmt.Sprintf("grpc server listening on port %s", cfg.Grpc.Port))

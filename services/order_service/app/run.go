@@ -13,7 +13,9 @@ import (
 
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/order_service/app/db/elastic"
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/order_service/app/db/postgres"
+	app_kafka "github.com/aleksiaichuk-innowise/inno_taxi/services/order_service/app/kafka"
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/order_service/config"
+	"github.com/aleksiaichuk-innowise/inno_taxi/services/order_service/gateway"
 	grpc_srv "github.com/aleksiaichuk-innowise/inno_taxi/services/order_service/handler/grpc"
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/order_service/repository/pg_repo"
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/order_service/service"
@@ -42,11 +44,24 @@ func Run(cfg *config.Config) error {
 
 	slog.Info("order service starting")
 
+	// -- kafka
+	kafkaProducer, err := app_kafka.NewPublisher(cfg.KafkaConf.Brokers)
+	if err != nil {
+		slog.Error("order service failed to init kafka producer", "error", err)
+		return err
+	}
+	defer func() {
+		if err := kafkaProducer.Close(); err != nil {
+			slog.Warn("order service failed to close kafka producer", "error", err)
+		}
+	}()
+	kafkaGateway := gateway.NewKafkaGateway(kafkaProducer)
+
 	// -- repo
 	repo := pg_repo.NewPgRepo(dbConn)
 
 	// services
-	orderService := service.NewOrderService(repo)
+	orderService := service.NewOrderService(repo, kafkaGateway)
 
 	// -- Grpc
 

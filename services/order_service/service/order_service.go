@@ -1,13 +1,24 @@
 package service
 
 import (
-	"github.com/aleksiaichuk-innowise/inno_taxi/services/order_service/repository/pg_repo"
+	"context"
+
+	service_dto "github.com/aleksiaichuk-innowise/inno_taxi/services/order_service/entity/service"
 )
 
-type OrderService struct {
-	repo pg_repo.PgRepository
+type OrderRepository interface {
+	CreateOrder(ctx context.Context, input service_dto.CreateOrderInput) (service_dto.Order, error)
 }
 
-func NewOrderService(repo pg_repo.PgRepository) OrderService {
-	return OrderService{repo: repo}
+type OrderGateway interface {
+	PublishOrderCreated(ctx context.Context, order service_dto.Order) error
+}
+
+type OrderService struct {
+	repo    OrderRepository
+	gateway OrderGateway
+}
+
+func NewOrderService(repo OrderRepository, gateway OrderGateway) OrderService {
+	return OrderService{repo: repo, gateway: gateway}
 }

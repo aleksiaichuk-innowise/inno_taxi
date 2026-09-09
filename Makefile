@@ -53,6 +53,36 @@ test-order: ## Run order_service unit tests
 test-order-integration: ## Run order_service integration tests (requires Docker)
 	cd services/order_service && go test -tags=integration ./...
 
+## --- auth_service ---
+
+build-auth: ## Build auth_service
+	cd services/auth_service && go build ./...
+
+run-auth: ## Run auth_service
+	cd services/auth_service && go run ./cmd/main.go
+
+test-auth: ## Run auth_service unit tests
+	cd services/auth_service && go test ./...
+
+## --- gateway_service ---
+
+build-gateway: ## Validate gateway_service's nginx.conf
+	docker run --rm -v $(CURDIR)/services/gateway_service/nginx.conf:/etc/nginx/nginx.conf:ro nginx:1.27-alpine nginx -t
+
+## --- wallet_service ---
+
+build-wallet: ## Build wallet_service
+	cd services/wallet_service && go build ./...
+
+run-wallet: ## Run wallet_service
+	cd services/wallet_service && go run ./cmd/main.go
+
+test-wallet: ## Run wallet_service unit tests
+	cd services/wallet_service && go test ./...
+
+test-wallet-integration: ## Run wallet_service integration tests (requires Docker)
+	cd services/wallet_service && go test -tags=integration ./...
+
 ## --- proto (order_service) ---
 
 proto-tools: ## Install protoc plugins needed for proto/gRPC-Gateway generation
@@ -97,4 +127,27 @@ migrate-order-down: ## Roll back the last order_service migration
 migrate-order-status: ## Show order_service migration status
 	goose -dir $(MIGRATIONS_DIR) postgres "$(PG_ORDER_DSN)" status
 
-.PHONY: help mongo-up build-user run-user test-user test-user-integration build-driver run-driver test-driver build-order run-order test-order test-order-integration proto-tools proto-order goose-tools migrate-order-create migrate-order-up migrate-order-down migrate-order-status
+## --- Postgres migrations (wallet_service, via goose) ---
+
+WALLET_MIGRATIONS_DIR := services/wallet_service/migrations/postgres
+
+PG_WALLET_HOST ?= localhost
+PG_WALLET_PORT ?= 5434
+PG_WALLET_USER ?= postgres
+PG_WALLET_PASS ?= postgres
+PG_WALLET_DATABASE ?= wallet
+PG_WALLET_DSN := postgres://$(PG_WALLET_USER):$(PG_WALLET_PASS)@$(PG_WALLET_HOST):$(PG_WALLET_PORT)/$(PG_WALLET_DATABASE)?sslmode=disable
+
+migrate-wallet-create: ## Create a new wallet_service migration (usage: make migrate-wallet-create name=add_foo)
+	goose -dir $(WALLET_MIGRATIONS_DIR) create $(name) sql
+
+migrate-wallet-up: ## Apply all pending wallet_service migrations
+	goose -dir $(WALLET_MIGRATIONS_DIR) postgres "$(PG_WALLET_DSN)" up
+
+migrate-wallet-down: ## Roll back the last wallet_service migration
+	goose -dir $(WALLET_MIGRATIONS_DIR) postgres "$(PG_WALLET_DSN)" down
+
+migrate-wallet-status: ## Show wallet_service migration status
+	goose -dir $(WALLET_MIGRATIONS_DIR) postgres "$(PG_WALLET_DSN)" status
+
+.PHONY: help mongo-up build-user run-user test-user test-user-integration build-driver run-driver test-driver build-order run-order test-order test-order-integration build-auth run-auth test-auth build-gateway build-wallet run-wallet test-wallet test-wallet-integration proto-tools proto-order goose-tools migrate-order-create migrate-order-up migrate-order-down migrate-order-status migrate-wallet-create migrate-wallet-up migrate-wallet-down migrate-wallet-status

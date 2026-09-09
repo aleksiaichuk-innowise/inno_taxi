@@ -136,7 +136,47 @@ services:
         condition: service_started
       driver_service:
         condition: service_started
+  wallet_postgres:
+    image: postgres:18
+    container_name: taxi-wallet-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${PG_WALLET_USER:-postgres}
+      POSTGRES_PASSWORD: ${PG_WALLET_PASS:-postgres}
+      POSTGRES_DB: ${PG_WALLET_DATABASE:-wallet}
+    ports:
+      - "5434:5432"
+    volumes:
+      - wallet-postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PG_WALLET_USER:-postgres} -d ${PG_WALLET_DATABASE:-wallet}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  wallet_service:
+    build:
+      context: .
+      dockerfile: services/wallet_service/Dockerfile
+    container_name: taxi-wallet-service
+    restart: unless-stopped
+    environment:
+      HTTP_WALLET_HOST: 0.0.0.0
+      HTTP_WALLET_PORT: 8084
+      PG_WALLET_HOST: wallet_postgres
+      PG_WALLET_PORT: 5432
+      PG_WALLET_USER: ${PG_WALLET_USER:-postgres}
+      PG_WALLET_PASS: ${PG_WALLET_PASS:-postgres}
+      PG_WALLET_DATABASE: ${PG_WALLET_DATABASE:-wallet}
+      REDIS_ADDR: redis:6379
+    ports:
+      - "8084:8084"
+    depends_on:
+      wallet_postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 volumes:
   mongo-data:
   postgres-data:
   redis-data:
+  wallet-postgres-data:

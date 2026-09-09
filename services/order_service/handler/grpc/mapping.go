@@ -1,9 +1,25 @@
 package grpc
 
 import (
+	"time"
+
 	service_dto "github.com/aleksiaichuk-innowise/inno_taxi/services/order_service/entity/service"
 	"github.com/aleksiaichuk-innowise/inno_taxi/shared/proto/order_service"
 )
+
+func orderToProto(o service_dto.Order) *order_service.Order {
+	return &order_service.Order{
+		Id:              o.ID,
+		UserId:          o.UserID,
+		DriverId:        stringOrEmpty(o.DriverID),
+		TaxiType:        taxiTypeToProto(o.TaxiType),
+		Start:           locationToProto(o.Start),
+		Destination:     locationToProto(o.Destination),
+		Status:          statusToProto(o.Status),
+		PriceMinorUnits: int64OrZero(o.PriceMinorUnits),
+		CreatedAt:       o.CreatedAt.Format(time.RFC3339),
+	}
+}
 
 func taxiTypeFromProto(t order_service.TaxiType) service_dto.TaxiType {
 	switch t {

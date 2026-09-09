@@ -8,6 +8,7 @@ require (
 	github.com/IBM/sarama v1.60.2
 	github.com/aleksiaichuk-innowise/inno_taxi/shared v0.0.0-00010101000000-000000000000
 	github.com/elastic/go-elasticsearch/v8 v8.19.7
+	github.com/google/uuid v1.6.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.30.0
 	github.com/jackc/pgx/v5 v5.10.0
 	github.com/joho/godotenv v1.5.1

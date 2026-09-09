@@ -3,7 +3,6 @@ package grpc
 import (
 	"context"
 	"errors"
-	"time"
 
 	service_dto "github.com/aleksiaichuk-innowise/inno_taxi/services/order_service/entity/service"
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/order_service/errorsx"
@@ -45,19 +44,37 @@ func (o OrderServer) CreateOrder(ctx context.Context, req *order_service.CreateO
 		if errors.Is(err, errorsx.ErrInvalidTaxiType) || errors.Is(err, errorsx.ErrInvalidLocation) {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
+		if errors.Is(err, errorsx.ErrInsufficientFunds) {
+			return nil, status.Error(codes.FailedPrecondition, err.Error())
+		}
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	return &order_service.CreateOrderResponse{
-		Order: &order_service.Order{
-			Id:              res.ID,
-			UserId:          res.UserID,
-			DriverId:        stringOrEmpty(res.DriverID),
-			TaxiType:        taxiTypeToProto(res.TaxiType),
-			Start:           locationToProto(res.Start),
-			Destination:     locationToProto(res.Destination),
-			Status:          statusToProto(res.Status),
-			PriceMinorUnits: int64OrZero(res.PriceMinorUnits),
-			CreatedAt:       res.CreatedAt.Format(time.RFC3339),
-		},
+		Order: orderToProto(res),
+	}, nil
+}
+
+func (o OrderServer) CancelOrder(ctx context.Context, req *order_service.CancelOrderRequest) (*order_service.CancelOrderResponse, error) {
+	userId, ok := interceptor.UserIDFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.InvalidArgument, "missing user ID")
+	}
+	if req.GetOrderId() == "" {
+		return nil, status.Error(codes.InvalidArgument, "order id is required")
+	}
+
+	res, err := o.svc.CancelOrder(ctx, req.GetOrderId(), userId)
+	if err != nil {
+		switch {
+		case errors.Is(err, errorsx.ErrOrderNotFound):
+			return nil, status.Error(codes.NotFound, err.Error())
+		case errors.Is(err, errorsx.ErrOrderNotCancellable):
+			return nil, status.Error(codes.FailedPrecondition, err.Error())
+		default:
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+	}
+	return &order_service.CancelOrderResponse{
+		Order: orderToProto(res),
 	}, nil
 }

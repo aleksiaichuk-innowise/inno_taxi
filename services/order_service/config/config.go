@@ -9,16 +9,21 @@ import (
 )
 
 type Config struct {
-	DbConn    shared.PostgresConfig
-	EsConn    shared.ElasticsearchConfig
-	KafkaConf shared.KafkaConfig
-	Grpc      *shared.GrpcServerConfig
-	HttpHost  shared.HttpHostConfig
-	JWT       *JWTConfig
+	DbConn        shared.PostgresConfig
+	EsConn        shared.ElasticsearchConfig
+	KafkaConf     shared.KafkaConfig
+	Grpc          *shared.GrpcServerConfig
+	HttpHost      shared.HttpHostConfig
+	JWT           *JWTConfig
+	WalletService *WalletServiceConfig
 }
 
 type JWTConfig struct {
 	Secret string `env:"JWT_SECRET"`
+}
+
+type WalletServiceConfig struct {
+	BaseURL string
 }
 
 func Load() *Config {
@@ -62,6 +67,9 @@ func Load() *Config {
 		},
 		JWT: &JWTConfig{
 			Secret: shared.GetEnvFallback("JWT_SECRET", "taxi"),
+		},
+		WalletService: &WalletServiceConfig{
+			BaseURL: shared.GetEnvFallback("WALLET_SERVICE_BASE_URL", "http://localhost:8084"),
 		},
 	}
 }

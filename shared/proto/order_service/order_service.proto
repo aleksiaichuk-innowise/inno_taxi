@@ -43,6 +43,14 @@ message CreateOrderResponse {
   Order order = 1;
 }
 
+message CancelOrderRequest {
+  string order_id = 1;
+}
+
+message CancelOrderResponse {
+  Order order = 1;
+}
+
 message Location {
   double lat = 1;
   double long =2;
@@ -54,6 +62,12 @@ service OrderService {
     option (google.api.http) = {
       post: "/v1/orders"
       body: "*"
+    };
+  }
+
+  rpc CancelOrder(CancelOrderRequest) returns (CancelOrderResponse) {
+    option (google.api.http) = {
+      post: "/v1/orders/{order_id}/cancel"
     };
   }
 }

@@ -344,6 +344,94 @@ func (x *CreateOrderResponse) GetOrder() *Order {
 	return nil
 }
 
+type CancelOrderRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	OrderId       string                 `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CancelOrderRequest) Reset() {
+	*x = CancelOrderRequest{}
+	mi := &file_shared_proto_order_service_order_service_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CancelOrderRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CancelOrderRequest) ProtoMessage() {}
+
+func (x *CancelOrderRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_shared_proto_order_service_order_service_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CancelOrderRequest.ProtoReflect.Descriptor instead.
+func (*CancelOrderRequest) Descriptor() ([]byte, []int) {
+	return file_shared_proto_order_service_order_service_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *CancelOrderRequest) GetOrderId() string {
+	if x != nil {
+		return x.OrderId
+	}
+	return ""
+}
+
+type CancelOrderResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Order         *Order                 `protobuf:"bytes,1,opt,name=order,proto3" json:"order,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CancelOrderResponse) Reset() {
+	*x = CancelOrderResponse{}
+	mi := &file_shared_proto_order_service_order_service_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CancelOrderResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CancelOrderResponse) ProtoMessage() {}
+
+func (x *CancelOrderResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_shared_proto_order_service_order_service_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CancelOrderResponse.ProtoReflect.Descriptor instead.
+func (*CancelOrderResponse) Descriptor() ([]byte, []int) {
+	return file_shared_proto_order_service_order_service_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *CancelOrderResponse) GetOrder() *Order {
+	if x != nil {
+		return x.Order
+	}
+	return nil
+}
+
 type Location struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Lat           float64                `protobuf:"fixed64,1,opt,name=lat,proto3" json:"lat,omitempty"`
@@ -354,7 +442,7 @@ type Location struct {
 
 func (x *Location) Reset() {
 	*x = Location{}
-	mi := &file_shared_proto_order_service_order_service_proto_msgTypes[3]
+	mi := &file_shared_proto_order_service_order_service_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -366,7 +454,7 @@ func (x *Location) String() string {
 func (*Location) ProtoMessage() {}
 
 func (x *Location) ProtoReflect() protoreflect.Message {
-	mi := &file_shared_proto_order_service_order_service_proto_msgTypes[3]
+	mi := &file_shared_proto_order_service_order_service_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -379,7 +467,7 @@ func (x *Location) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Location.ProtoReflect.Descriptor instead.
 func (*Location) Descriptor() ([]byte, []int) {
-	return file_shared_proto_order_service_order_service_proto_rawDescGZIP(), []int{3}
+	return file_shared_proto_order_service_order_service_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *Location) GetLat() float64 {
@@ -417,6 +505,10 @@ const file_shared_proto_order_service_order_service_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\t \x01(\tR\tcreatedAt\"<\n" +
 	"\x13CreateOrderResponse\x12%\n" +
+	"\x05order\x18\x01 \x01(\v2\x0f.order.v1.OrderR\x05order\"/\n" +
+	"\x12CancelOrderRequest\x12\x19\n" +
+	"\border_id\x18\x01 \x01(\tR\aorderId\"<\n" +
+	"\x13CancelOrderResponse\x12%\n" +
 	"\x05order\x18\x01 \x01(\v2\x0f.order.v1.OrderR\x05order\"0\n" +
 	"\bLocation\x12\x10\n" +
 	"\x03lat\x18\x01 \x01(\x01R\x03lat\x12\x12\n" +
@@ -432,10 +524,11 @@ const file_shared_proto_order_service_order_service_proto_rawDesc = "" +
 	"\x16STATUS_DRIVER_ASSIGNED\x10\x02\x12\x16\n" +
 	"\x12STATUS_IN_PROGRESS\x10\x03\x12\x14\n" +
 	"\x10STATUS_COMPLETED\x10\x04\x12\x14\n" +
-	"\x10STATUS_CANCELLED\x10\x052q\n" +
+	"\x10STATUS_CANCELLED\x10\x052\xe3\x01\n" +
 	"\fOrderService\x12a\n" +
 	"\vCreateOrder\x12\x1c.order.v1.CreateOrderRequest\x1a\x1d.order.v1.CreateOrderResponse\"\x15\x82\xd3\xe4\x93\x02\x0f:\x01*\"\n" +
-	"/v1/ordersBUZSgithub.com/aleksiaichuk-innowise/inno_taxi/shared/proto/order_service;order_serviceb\x06proto3"
+	"/v1/orders\x12p\n" +
+	"\vCancelOrder\x12\x1c.order.v1.CancelOrderRequest\x1a\x1d.order.v1.CancelOrderResponse\"$\x82\xd3\xe4\x93\x02\x1e\"\x1c/v1/orders/{order_id}/cancelBUZSgithub.com/aleksiaichuk-innowise/inno_taxi/shared/proto/order_service;order_serviceb\x06proto3"
 
 var (
 	file_shared_proto_order_service_order_service_proto_rawDescOnce sync.Once
@@ -450,31 +543,36 @@ func file_shared_proto_order_service_order_service_proto_rawDescGZIP() []byte {
 }
 
 var file_shared_proto_order_service_order_service_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_shared_proto_order_service_order_service_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_shared_proto_order_service_order_service_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_shared_proto_order_service_order_service_proto_goTypes = []any{
 	(TaxiType)(0),               // 0: order.v1.TaxiType
 	(Status)(0),                 // 1: order.v1.Status
 	(*CreateOrderRequest)(nil),  // 2: order.v1.CreateOrderRequest
 	(*Order)(nil),               // 3: order.v1.Order
 	(*CreateOrderResponse)(nil), // 4: order.v1.CreateOrderResponse
-	(*Location)(nil),            // 5: order.v1.Location
+	(*CancelOrderRequest)(nil),  // 5: order.v1.CancelOrderRequest
+	(*CancelOrderResponse)(nil), // 6: order.v1.CancelOrderResponse
+	(*Location)(nil),            // 7: order.v1.Location
 }
 var file_shared_proto_order_service_order_service_proto_depIdxs = []int32{
-	0, // 0: order.v1.CreateOrderRequest.taxi_type:type_name -> order.v1.TaxiType
-	5, // 1: order.v1.CreateOrderRequest.start:type_name -> order.v1.Location
-	5, // 2: order.v1.CreateOrderRequest.destination:type_name -> order.v1.Location
-	0, // 3: order.v1.Order.taxi_type:type_name -> order.v1.TaxiType
-	5, // 4: order.v1.Order.start:type_name -> order.v1.Location
-	5, // 5: order.v1.Order.destination:type_name -> order.v1.Location
-	1, // 6: order.v1.Order.status:type_name -> order.v1.Status
-	3, // 7: order.v1.CreateOrderResponse.order:type_name -> order.v1.Order
-	2, // 8: order.v1.OrderService.CreateOrder:input_type -> order.v1.CreateOrderRequest
-	4, // 9: order.v1.OrderService.CreateOrder:output_type -> order.v1.CreateOrderResponse
-	9, // [9:10] is the sub-list for method output_type
-	8, // [8:9] is the sub-list for method input_type
-	8, // [8:8] is the sub-list for extension type_name
-	8, // [8:8] is the sub-list for extension extendee
-	0, // [0:8] is the sub-list for field type_name
+	0,  // 0: order.v1.CreateOrderRequest.taxi_type:type_name -> order.v1.TaxiType
+	7,  // 1: order.v1.CreateOrderRequest.start:type_name -> order.v1.Location
+	7,  // 2: order.v1.CreateOrderRequest.destination:type_name -> order.v1.Location
+	0,  // 3: order.v1.Order.taxi_type:type_name -> order.v1.TaxiType
+	7,  // 4: order.v1.Order.start:type_name -> order.v1.Location
+	7,  // 5: order.v1.Order.destination:type_name -> order.v1.Location
+	1,  // 6: order.v1.Order.status:type_name -> order.v1.Status
+	3,  // 7: order.v1.CreateOrderResponse.order:type_name -> order.v1.Order
+	3,  // 8: order.v1.CancelOrderResponse.order:type_name -> order.v1.Order
+	2,  // 9: order.v1.OrderService.CreateOrder:input_type -> order.v1.CreateOrderRequest
+	5,  // 10: order.v1.OrderService.CancelOrder:input_type -> order.v1.CancelOrderRequest
+	4,  // 11: order.v1.OrderService.CreateOrder:output_type -> order.v1.CreateOrderResponse
+	6,  // 12: order.v1.OrderService.CancelOrder:output_type -> order.v1.CancelOrderResponse
+	11, // [11:13] is the sub-list for method output_type
+	9,  // [9:11] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_shared_proto_order_service_order_service_proto_init() }
@@ -488,7 +586,7 @@ func file_shared_proto_order_service_order_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_shared_proto_order_service_order_service_proto_rawDesc), len(file_shared_proto_order_service_order_service_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   4,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

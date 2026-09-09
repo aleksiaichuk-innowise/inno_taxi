@@ -47,6 +47,36 @@
           "OrderService"
         ]
       }
+    },
+    "/v1/orders/{orderId}/cancel": {
+      "post": {
+        "operationId": "OrderService_CancelOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CancelOrderResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googleRpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "OrderService"
+        ]
+      }
     }
   },
   "definitions": {
@@ -102,6 +132,14 @@
         }
       },
       "additionalProperties": {}
+    },
+    "v1CancelOrderResponse": {
+      "type": "object",
+      "properties": {
+        "order": {
+          "$ref": "#/definitions/v1Order"
+        }
+      }
     },
     "v1CreateOrderRequest": {
       "type": "object",

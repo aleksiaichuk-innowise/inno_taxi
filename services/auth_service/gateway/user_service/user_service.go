@@ -56,14 +56,20 @@ func (g *gateway) VerifyCredentials(ctx context.Context, login, password string)
 	}
 	defer resp.Body.Close()
 
-	switch resp.StatusCode {
-	case http.StatusOK:
+	switch {
+	case resp.StatusCode == http.StatusOK:
 		var u userResp
 		if err := json.NewDecoder(resp.Body).Decode(&u); err != nil {
 			return gateway_dto.UserInfo{}, fmt.Errorf("decode verify credentials response: %w", err)
 		}
 		return gateway_dto.UserInfo{ID: u.ID, Roles: u.Roles}, nil
-	case http.StatusUnauthorized:
+	case resp.StatusCode >= 400 && resp.StatusCode < 500:
+		// user_service's own validation (e.g. a too-short password fails
+		// its `min=8` rule before credentials are even checked) and its
+		// actual "wrong password" case are both, from Auth Service's
+		// client's point of view, just "this login attempt doesn't work" -
+		// there's no separate action a caller of /login could take for one
+		// versus the other, so both collapse to the same 401.
 		return gateway_dto.UserInfo{}, errorsx.ErrInvalidCredentials
 	default:
 		return gateway_dto.UserInfo{}, fmt.Errorf("user service returned unexpected status %d", resp.StatusCode)

@@ -81,5 +81,8 @@ func registerRoutes(r *gin.Engine, h *http_handler.Handler) {
 	r.POST("/login", h.Login)
 	r.POST("/refresh", h.Refresh)
 	r.POST("/logout", h.Logout)
-	r.POST("/validate", h.Validate)
+	// GET, not POST: nginx's auth_request module always issues its
+	// subrequest as GET regardless of the original request's method, and
+	// Validate has no side effects anyway (Redis reads only).
+	r.GET("/validate", h.Validate)
 }

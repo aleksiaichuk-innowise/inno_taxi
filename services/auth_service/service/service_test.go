@@ -104,7 +104,7 @@ func TestLogin_Success(t *testing.T) {
 		t.Fatalf("expected non-empty tokens, got %+v", pair)
 	}
 
-	claims, err := svc.Validate(context.Background(), pair.AccessToken)
+	claims, err := svc.Validate(context.Background(), pair.AccessToken, "")
 	if err != nil {
 		t.Fatalf("expected freshly issued access token to validate, got %v", err)
 	}
@@ -135,7 +135,7 @@ func TestValidate_TokenSignedWithDifferentSecret(t *testing.T) {
 	}
 
 	svc := newTestAuthService(sessions, userService)
-	if _, err := svc.Validate(context.Background(), pair.AccessToken); !errors.Is(err, errorsx.ErrInvalidToken) {
+	if _, err := svc.Validate(context.Background(), pair.AccessToken, ""); !errors.Is(err, errorsx.ErrInvalidToken) {
 		t.Fatalf("expected ErrInvalidToken for a token signed with a different secret, got %v", err)
 	}
 }
@@ -154,7 +154,7 @@ func TestValidate_RevokedSession(t *testing.T) {
 		t.Fatalf("unexpected logout error: %v", err)
 	}
 
-	_, err = svc.Validate(context.Background(), pair.AccessToken)
+	_, err = svc.Validate(context.Background(), pair.AccessToken, "")
 	if !errors.Is(err, errorsx.ErrInvalidToken) {
 		t.Fatalf("expected ErrInvalidToken after logout, got %v", err)
 	}
@@ -184,8 +184,27 @@ func TestRefresh_RotatesSession(t *testing.T) {
 	}
 
 	// The new pair must work.
-	if _, err := svc.Validate(context.Background(), rotated.AccessToken); err != nil {
+	if _, err := svc.Validate(context.Background(), rotated.AccessToken, ""); err != nil {
 		t.Fatalf("expected new access token to validate, got %v", err)
+	}
+}
+
+func TestValidate_RequiredRole(t *testing.T) {
+	sessions := newFakeSessionStore()
+	userService := &fakeUserServiceGateway{user: &gateway_dto.UserInfo{ID: "user-1", Roles: []string{"user", "admin"}}}
+	svc := newTestAuthService(sessions, userService)
+
+	pair, err := svc.Login(context.Background(), "u", "p")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if _, err := svc.Validate(context.Background(), pair.AccessToken, "admin"); err != nil {
+		t.Fatalf("expected token carrying admin role to satisfy requiredRole=admin, got %v", err)
+	}
+
+	if _, err := svc.Validate(context.Background(), pair.AccessToken, "analyst"); !errors.Is(err, errorsx.ErrForbidden) {
+		t.Fatalf("expected ErrForbidden for a role the token doesn't carry, got %v", err)
 	}
 }
 

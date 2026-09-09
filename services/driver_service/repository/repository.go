@@ -57,14 +57,21 @@ func (r DriverRepository) FindByUserID(ctx context.Context, id string) (service_
 	filter := bson.M{"user_id": id}
 	res := r.client.Database.Collection(DRIVER_COLLECTION).FindOne(ctx, filter)
 
-	var d service_dto.Driver
-	if err := res.Decode(&d); err != nil {
+	var doc repository.Driver
+	if err := res.Decode(&doc); err != nil {
 		if errors.Is(err, drivermongo.ErrNoDocuments) {
 			return service_dto.Driver{}, errorsx.ErrDriverNotFound
 		}
 		return service_dto.Driver{}, err
 	}
-	return d, nil
+	return service_dto.Driver{
+		ID:        doc.ID.Hex(),
+		UserID:    doc.UserID,
+		TaxiType:  service_dto.TaxiType(doc.TaxiType),
+		Status:    service_dto.Status(doc.Status),
+		CreatedAt: doc.CreatedAt,
+		UpdatedAt: doc.UpdatedAt,
+	}, nil
 }
 func (r DriverRepository) UpdateStatusByUserID(ctx context.Context, userID, status string) error {
 	filter := bson.M{"user_id": userID}

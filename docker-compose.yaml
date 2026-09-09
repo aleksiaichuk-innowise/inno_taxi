@@ -98,6 +98,44 @@ services:
         condition: service_healthy
       user_service:
         condition: service_started
+  driver_service:
+    build:
+      context: .
+      dockerfile: services/driver_service/Dockerfile
+    container_name: taxi-driver-service
+    restart: unless-stopped
+    environment:
+      HTTP_DS_HOST: 0.0.0.0
+      HTTP_DS_PORT: 8081
+      MONGO_DS_HOST: mongo
+      MONGO_DS_PORT: 27017
+      MONGO_DS_DB: ${MONGO_DRIVER_DB:-driver_taxi}
+      MONGO_DS_USERNAME: ${MONGO_ROOT_USER:-taxi}
+      MONGO_DS_PASSWORD: ${MONGO_ROOT_PASSWORD:-taxi}
+      JWT_SECRET: ${JWT_SECRET:-taxi}
+    ports:
+      # Host 8083, not 8081: mongo-ui already owns 8081 on the host (the
+      # container itself still listens on 8081 - only the host-side
+      # mapping needs to differ).
+      - "8083:8081"
+    depends_on:
+      mongo:
+        condition: service_healthy
+  gateway_service:
+    build:
+      context: services/gateway_service
+      dockerfile: Dockerfile
+    container_name: taxi-gateway-service
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    depends_on:
+      auth_service:
+        condition: service_started
+      user_service:
+        condition: service_started
+      driver_service:
+        condition: service_started
 volumes:
   mongo-data:
   postgres-data:

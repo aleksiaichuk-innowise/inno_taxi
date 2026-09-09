@@ -1,12 +1,13 @@
 package consts
 
 const (
-	JWTHeaderKey = "Authorization "
+	JWTHeaderKey = "Authorization"
 	BearerPrefix = "Bearer "
 )
 
 const (
-	UserRole   = "user"
-	AdminRole  = "admin"
-	DriverRole = "driver"
+	UserRole    = "user"
+	AdminRole   = "admin"
+	DriverRole  = "driver"
+	AnalystRole = "analyst"
 )

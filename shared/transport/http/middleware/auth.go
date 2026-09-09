@@ -6,6 +6,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/aleksiaichuk-innowise/inno_taxi/shared/consts"
 	"github.com/aleksiaichuk-innowise/inno_taxi/shared/errorsx"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -18,19 +19,18 @@ type CustomClaims struct {
 
 func Auth(secret string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		authHeader := c.GetHeader("Authorization")
+		authHeader := c.GetHeader(consts.JWTHeaderKey)
 		if authHeader == "" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, errorsx.HttpErrResp{Message: "Authorization header is empty"})
 			return
 		}
 
-		parts := strings.SplitN(authHeader, " ", 2)
-		if len(parts) != 2 || parts[0] != "Bearer" {
+		if !strings.HasPrefix(authHeader, consts.BearerPrefix) {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, errorsx.HttpErrResp{Message: "Authorization header format is invalid"})
 			return
 		}
 
-		tokenString := parts[1]
+		tokenString := strings.TrimPrefix(authHeader, consts.BearerPrefix)
 		claims := &CustomClaims{}
 
 		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (any, error) {

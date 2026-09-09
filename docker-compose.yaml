@@ -136,6 +136,8 @@ services:
         condition: service_started
       driver_service:
         condition: service_started
+      analytic_service:
+        condition: service_started
   wallet_postgres:
     image: postgres:18
     container_name: taxi-wallet-postgres
@@ -175,8 +177,80 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+  kafka:
+    image: apache/kafka:3.9.0
+    container_name: taxi-kafka
+    restart: unless-stopped
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 15
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.8-alpine
+    container_name: taxi-clickhouse
+    restart: unless-stopped
+    # IPv6 isn't available in every docker network this stack runs in;
+    # ClickHouse's default config listens on both stacks and refuses to
+    # start any listener at all if the IPv6 bind fails outright, even
+    # though the IPv4 one would have worked - force IPv4-only via a
+    # config.d override (the documented way; CLI --listen_host isn't
+    # accepted by this image's entrypoint wrapper).
+    volumes:
+      - ./services/analytic_service/clickhouse-listen-ipv4.xml:/etc/clickhouse-server/config.d/listen-ipv4.xml:ro
+      - clickhouse-data:/var/lib/clickhouse
+    environment:
+      CLICKHOUSE_DB: ${CLICKHOUSE_DATABASE:-analytics}
+      CLICKHOUSE_USER: ${CLICKHOUSE_USERNAME:-default}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-analytics}
+    ports:
+      - "8123:8123"
+      - "9002:9000"
+    healthcheck:
+      # 127.0.0.1, not localhost: this environment has no working IPv6, and
+      # "localhost" resolves to ::1 first - the same class of bug the
+      # listen_host override above works around, just on the client side.
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:8123/ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+  analytic_service:
+    build:
+      context: .
+      dockerfile: services/analytic_service/Dockerfile
+    container_name: taxi-analytic-service
+    restart: unless-stopped
+    environment:
+      HTTP_ANALYTIC_HOST: 0.0.0.0
+      HTTP_ANALYTIC_PORT: 8085
+      KAFKA_BROKERS: kafka:9092
+      CLICKHOUSE_ADDR: clickhouse:9000
+      CLICKHOUSE_DATABASE: ${CLICKHOUSE_DATABASE:-analytics}
+      CLICKHOUSE_USERNAME: ${CLICKHOUSE_USERNAME:-default}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-analytics}
+    ports:
+      - "8085:8085"
+    depends_on:
+      kafka:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
 volumes:
   mongo-data:
   postgres-data:
   redis-data:
   wallet-postgres-data:
+  clickhouse-data:

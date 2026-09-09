@@ -1,0 +1,10 @@
+<!--
+  ClickHouse's default config listens on both IPv4 (0.0.0.0) and IPv6 (::).
+  On a Docker network with no IPv6 support, the IPv6 bind fails outright
+  and the server refuses to start any listener at all - even the IPv4 one
+  that would otherwise have worked fine. Force IPv4-only; nothing in this
+  compose stack needs IPv6.
+-->
+<clickhouse>
+    <listen_host>0.0.0.0</listen_host>
+</clickhouse>

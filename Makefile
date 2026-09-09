@@ -83,6 +83,20 @@ test-wallet: ## Run wallet_service unit tests
 test-wallet-integration: ## Run wallet_service integration tests (requires Docker)
 	cd services/wallet_service && go test -tags=integration ./...
 
+## --- analytic_service ---
+
+build-analytic: ## Build analytic_service
+	cd services/analytic_service && go build ./...
+
+run-analytic: ## Run analytic_service
+	cd services/analytic_service && go run ./cmd/main.go
+
+test-analytic: ## Run analytic_service unit tests
+	cd services/analytic_service && go test ./...
+
+test-analytic-integration: ## Run analytic_service integration tests (requires Docker)
+	cd services/analytic_service && go test -tags=integration ./...
+
 ## --- proto (order_service) ---
 
 proto-tools: ## Install protoc plugins needed for proto/gRPC-Gateway generation
@@ -150,4 +164,4 @@ migrate-wallet-down: ## Roll back the last wallet_service migration
 migrate-wallet-status: ## Show wallet_service migration status
 	goose -dir $(WALLET_MIGRATIONS_DIR) postgres "$(PG_WALLET_DSN)" status
 
-.PHONY: help mongo-up build-user run-user test-user test-user-integration build-driver run-driver test-driver build-order run-order test-order test-order-integration build-auth run-auth test-auth build-gateway build-wallet run-wallet test-wallet test-wallet-integration proto-tools proto-order goose-tools migrate-order-create migrate-order-up migrate-order-down migrate-order-status migrate-wallet-create migrate-wallet-up migrate-wallet-down migrate-wallet-status
+.PHONY: help mongo-up build-user run-user test-user test-user-integration build-driver run-driver test-driver build-order run-order test-order test-order-integration build-auth run-auth test-auth build-gateway build-wallet run-wallet test-wallet test-wallet-integration build-analytic run-analytic test-analytic test-analytic-integration proto-tools proto-order goose-tools migrate-order-create migrate-order-up migrate-order-down migrate-order-status migrate-wallet-create migrate-wallet-up migrate-wallet-down migrate-wallet-status

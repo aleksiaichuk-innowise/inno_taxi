@@ -66,6 +66,39 @@ services:
     depends_on:
       mongo:
         condition: service_healthy
+  redis:
+    image: redis:7-alpine
+    container_name: taxi-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  auth_service:
+    build:
+      context: .
+      dockerfile: services/auth_service/Dockerfile
+    container_name: taxi-auth-service
+    restart: unless-stopped
+    environment:
+      HTTP_AUTH_HOST: 0.0.0.0
+      HTTP_AUTH_PORT: 8082
+      REDIS_ADDR: redis:6379
+      USER_SERVICE_BASE_URL: http://user_service:8080
+      JWT_SECRET: ${JWT_SECRET:-taxi}
+    ports:
+      - "8082:8082"
+    depends_on:
+      redis:
+        condition: service_healthy
+      user_service:
+        condition: service_started
 volumes:
   mongo-data:
   postgres-data:
+  redis-data:

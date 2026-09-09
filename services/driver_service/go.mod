@@ -8,6 +8,8 @@ require (
 	go.mongodb.org/mongo-driver/v2 v2.8.0
 )
 
+require github.com/golang-jwt/jwt/v5 v5.3.1
+
 replace github.com/aleksiaichuk-innowise/inno_taxi/shared => ../../shared
 
 require (

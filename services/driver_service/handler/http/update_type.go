@@ -12,13 +12,7 @@ import (
 )
 
 func (h Handler) UpdateType(c *gin.Context) {
-	userID := c.Param("user_id")
-	if userID == "" {
-		c.JSON(http.StatusBadRequest, errresp.HttpErrResp{
-			Message: "invalid user_id",
-		})
-		return
-	}
+	userID := c.GetString("userID")
 	var req http_dto.UpdateDriverTypeReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, errresp.HttpErrResp{

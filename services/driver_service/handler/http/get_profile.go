@@ -11,13 +11,7 @@ import (
 )
 
 func (h Handler) Profile(c *gin.Context) {
-	userID := c.Param("user_id")
-	if userID == "" {
-		c.JSON(http.StatusBadRequest, errresp.HttpErrResp{
-			Message: "invalid user_id",
-		})
-		return
-	}
+	userID := c.GetString("userID")
 	p, err := h.svc.GetProfileByUser(c.Request.Context(), userID)
 	if err != nil {
 		if errors.Is(err, errorsx.ErrDriverNotFound) {

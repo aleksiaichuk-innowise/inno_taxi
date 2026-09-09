@@ -16,12 +16,14 @@ import (
 	mongo_migration "github.com/aleksiaichuk-innowise/inno_taxi/services/driver_service/migrations/mongo"
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/driver_service/repository"
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/driver_service/service"
+	"github.com/aleksiaichuk-innowise/inno_taxi/shared/transport/http/middleware"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 )
 
 func Run(cfg *config.Config) error {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+
 	defer stop()
 	mongoConn, err := mongo.New(ctx, cfg.Mongo)
 
@@ -48,7 +50,7 @@ func Run(cfg *config.Config) error {
 	v := validator.New()
 	h := http_handler.NewDriverHandler(s, v)
 
-	registerRoutes(router, h)
+	registerRoutes(router, h, cfg.JWT.Secret)
 
 	srv := &http.Server{
 		Addr:    fmt.Sprintf("%s:%s", cfg.Host.Host, cfg.Host.Port),
@@ -76,10 +78,13 @@ func Run(cfg *config.Config) error {
 	return nil
 }
 
-func registerRoutes(r *gin.Engine, h *http_handler.Handler) {
+func registerRoutes(r *gin.Engine, h *http_handler.Handler, jwtSecret string) {
 	r.POST("/internal/drivers", h.Register)
 	r.GET("/internal/drivers", h.GetDrivers)
-	r.GET("/profile/:user_id", h.Profile)
-	r.PATCH("/profile/:user_id/status", h.UpdateStatus)
-	r.PATCH("/profile/:user_id/type", h.UpdateType)
+
+	profile := r.Group("/profile")
+	profile.Use(middleware.Auth(jwtSecret))
+	profile.GET("", h.Profile)
+	profile.PATCH("", h.UpdateType)
+	profile.PATCH("/status", h.UpdateStatus)
 }

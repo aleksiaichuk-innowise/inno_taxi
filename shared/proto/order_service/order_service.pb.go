@@ -432,6 +432,182 @@ func (x *CancelOrderResponse) GetOrder() *Order {
 	return nil
 }
 
+type StartTripRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	OrderId       string                 `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StartTripRequest) Reset() {
+	*x = StartTripRequest{}
+	mi := &file_shared_proto_order_service_order_service_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StartTripRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StartTripRequest) ProtoMessage() {}
+
+func (x *StartTripRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_shared_proto_order_service_order_service_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StartTripRequest.ProtoReflect.Descriptor instead.
+func (*StartTripRequest) Descriptor() ([]byte, []int) {
+	return file_shared_proto_order_service_order_service_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *StartTripRequest) GetOrderId() string {
+	if x != nil {
+		return x.OrderId
+	}
+	return ""
+}
+
+type StartTripResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Order         *Order                 `protobuf:"bytes,1,opt,name=order,proto3" json:"order,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StartTripResponse) Reset() {
+	*x = StartTripResponse{}
+	mi := &file_shared_proto_order_service_order_service_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StartTripResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StartTripResponse) ProtoMessage() {}
+
+func (x *StartTripResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_shared_proto_order_service_order_service_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StartTripResponse.ProtoReflect.Descriptor instead.
+func (*StartTripResponse) Descriptor() ([]byte, []int) {
+	return file_shared_proto_order_service_order_service_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *StartTripResponse) GetOrder() *Order {
+	if x != nil {
+		return x.Order
+	}
+	return nil
+}
+
+type CompleteTripRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	OrderId       string                 `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CompleteTripRequest) Reset() {
+	*x = CompleteTripRequest{}
+	mi := &file_shared_proto_order_service_order_service_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CompleteTripRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CompleteTripRequest) ProtoMessage() {}
+
+func (x *CompleteTripRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_shared_proto_order_service_order_service_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CompleteTripRequest.ProtoReflect.Descriptor instead.
+func (*CompleteTripRequest) Descriptor() ([]byte, []int) {
+	return file_shared_proto_order_service_order_service_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *CompleteTripRequest) GetOrderId() string {
+	if x != nil {
+		return x.OrderId
+	}
+	return ""
+}
+
+type CompleteTripResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Order         *Order                 `protobuf:"bytes,1,opt,name=order,proto3" json:"order,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CompleteTripResponse) Reset() {
+	*x = CompleteTripResponse{}
+	mi := &file_shared_proto_order_service_order_service_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CompleteTripResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CompleteTripResponse) ProtoMessage() {}
+
+func (x *CompleteTripResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_shared_proto_order_service_order_service_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CompleteTripResponse.ProtoReflect.Descriptor instead.
+func (*CompleteTripResponse) Descriptor() ([]byte, []int) {
+	return file_shared_proto_order_service_order_service_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *CompleteTripResponse) GetOrder() *Order {
+	if x != nil {
+		return x.Order
+	}
+	return nil
+}
+
 type Location struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Lat           float64                `protobuf:"fixed64,1,opt,name=lat,proto3" json:"lat,omitempty"`
@@ -442,7 +618,7 @@ type Location struct {
 
 func (x *Location) Reset() {
 	*x = Location{}
-	mi := &file_shared_proto_order_service_order_service_proto_msgTypes[5]
+	mi := &file_shared_proto_order_service_order_service_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -454,7 +630,7 @@ func (x *Location) String() string {
 func (*Location) ProtoMessage() {}
 
 func (x *Location) ProtoReflect() protoreflect.Message {
-	mi := &file_shared_proto_order_service_order_service_proto_msgTypes[5]
+	mi := &file_shared_proto_order_service_order_service_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -467,7 +643,7 @@ func (x *Location) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Location.ProtoReflect.Descriptor instead.
 func (*Location) Descriptor() ([]byte, []int) {
-	return file_shared_proto_order_service_order_service_proto_rawDescGZIP(), []int{5}
+	return file_shared_proto_order_service_order_service_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *Location) GetLat() float64 {
@@ -509,6 +685,14 @@ const file_shared_proto_order_service_order_service_proto_rawDesc = "" +
 	"\x12CancelOrderRequest\x12\x19\n" +
 	"\border_id\x18\x01 \x01(\tR\aorderId\"<\n" +
 	"\x13CancelOrderResponse\x12%\n" +
+	"\x05order\x18\x01 \x01(\v2\x0f.order.v1.OrderR\x05order\"-\n" +
+	"\x10StartTripRequest\x12\x19\n" +
+	"\border_id\x18\x01 \x01(\tR\aorderId\":\n" +
+	"\x11StartTripResponse\x12%\n" +
+	"\x05order\x18\x01 \x01(\v2\x0f.order.v1.OrderR\x05order\"0\n" +
+	"\x13CompleteTripRequest\x12\x19\n" +
+	"\border_id\x18\x01 \x01(\tR\aorderId\"=\n" +
+	"\x14CompleteTripResponse\x12%\n" +
 	"\x05order\x18\x01 \x01(\v2\x0f.order.v1.OrderR\x05order\"0\n" +
 	"\bLocation\x12\x10\n" +
 	"\x03lat\x18\x01 \x01(\x01R\x03lat\x12\x12\n" +
@@ -524,11 +708,13 @@ const file_shared_proto_order_service_order_service_proto_rawDesc = "" +
 	"\x16STATUS_DRIVER_ASSIGNED\x10\x02\x12\x16\n" +
 	"\x12STATUS_IN_PROGRESS\x10\x03\x12\x14\n" +
 	"\x10STATUS_COMPLETED\x10\x04\x12\x14\n" +
-	"\x10STATUS_CANCELLED\x10\x052\xe3\x01\n" +
+	"\x10STATUS_CANCELLED\x10\x052\xc5\x03\n" +
 	"\fOrderService\x12a\n" +
 	"\vCreateOrder\x12\x1c.order.v1.CreateOrderRequest\x1a\x1d.order.v1.CreateOrderResponse\"\x15\x82\xd3\xe4\x93\x02\x0f:\x01*\"\n" +
 	"/v1/orders\x12p\n" +
-	"\vCancelOrder\x12\x1c.order.v1.CancelOrderRequest\x1a\x1d.order.v1.CancelOrderResponse\"$\x82\xd3\xe4\x93\x02\x1e\"\x1c/v1/orders/{order_id}/cancelBUZSgithub.com/aleksiaichuk-innowise/inno_taxi/shared/proto/order_service;order_serviceb\x06proto3"
+	"\vCancelOrder\x12\x1c.order.v1.CancelOrderRequest\x1a\x1d.order.v1.CancelOrderResponse\"$\x82\xd3\xe4\x93\x02\x1e\"\x1c/v1/orders/{order_id}/cancel\x12i\n" +
+	"\tStartTrip\x12\x1a.order.v1.StartTripRequest\x1a\x1b.order.v1.StartTripResponse\"#\x82\xd3\xe4\x93\x02\x1d\"\x1b/v1/orders/{order_id}/start\x12u\n" +
+	"\fCompleteTrip\x12\x1d.order.v1.CompleteTripRequest\x1a\x1e.order.v1.CompleteTripResponse\"&\x82\xd3\xe4\x93\x02 \"\x1e/v1/orders/{order_id}/completeBUZSgithub.com/aleksiaichuk-innowise/inno_taxi/shared/proto/order_service;order_serviceb\x06proto3"
 
 var (
 	file_shared_proto_order_service_order_service_proto_rawDescOnce sync.Once
@@ -543,36 +729,46 @@ func file_shared_proto_order_service_order_service_proto_rawDescGZIP() []byte {
 }
 
 var file_shared_proto_order_service_order_service_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_shared_proto_order_service_order_service_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_shared_proto_order_service_order_service_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_shared_proto_order_service_order_service_proto_goTypes = []any{
-	(TaxiType)(0),               // 0: order.v1.TaxiType
-	(Status)(0),                 // 1: order.v1.Status
-	(*CreateOrderRequest)(nil),  // 2: order.v1.CreateOrderRequest
-	(*Order)(nil),               // 3: order.v1.Order
-	(*CreateOrderResponse)(nil), // 4: order.v1.CreateOrderResponse
-	(*CancelOrderRequest)(nil),  // 5: order.v1.CancelOrderRequest
-	(*CancelOrderResponse)(nil), // 6: order.v1.CancelOrderResponse
-	(*Location)(nil),            // 7: order.v1.Location
+	(TaxiType)(0),                // 0: order.v1.TaxiType
+	(Status)(0),                  // 1: order.v1.Status
+	(*CreateOrderRequest)(nil),   // 2: order.v1.CreateOrderRequest
+	(*Order)(nil),                // 3: order.v1.Order
+	(*CreateOrderResponse)(nil),  // 4: order.v1.CreateOrderResponse
+	(*CancelOrderRequest)(nil),   // 5: order.v1.CancelOrderRequest
+	(*CancelOrderResponse)(nil),  // 6: order.v1.CancelOrderResponse
+	(*StartTripRequest)(nil),     // 7: order.v1.StartTripRequest
+	(*StartTripResponse)(nil),    // 8: order.v1.StartTripResponse
+	(*CompleteTripRequest)(nil),  // 9: order.v1.CompleteTripRequest
+	(*CompleteTripResponse)(nil), // 10: order.v1.CompleteTripResponse
+	(*Location)(nil),             // 11: order.v1.Location
 }
 var file_shared_proto_order_service_order_service_proto_depIdxs = []int32{
 	0,  // 0: order.v1.CreateOrderRequest.taxi_type:type_name -> order.v1.TaxiType
-	7,  // 1: order.v1.CreateOrderRequest.start:type_name -> order.v1.Location
-	7,  // 2: order.v1.CreateOrderRequest.destination:type_name -> order.v1.Location
+	11, // 1: order.v1.CreateOrderRequest.start:type_name -> order.v1.Location
+	11, // 2: order.v1.CreateOrderRequest.destination:type_name -> order.v1.Location
 	0,  // 3: order.v1.Order.taxi_type:type_name -> order.v1.TaxiType
-	7,  // 4: order.v1.Order.start:type_name -> order.v1.Location
-	7,  // 5: order.v1.Order.destination:type_name -> order.v1.Location
+	11, // 4: order.v1.Order.start:type_name -> order.v1.Location
+	11, // 5: order.v1.Order.destination:type_name -> order.v1.Location
 	1,  // 6: order.v1.Order.status:type_name -> order.v1.Status
 	3,  // 7: order.v1.CreateOrderResponse.order:type_name -> order.v1.Order
 	3,  // 8: order.v1.CancelOrderResponse.order:type_name -> order.v1.Order
-	2,  // 9: order.v1.OrderService.CreateOrder:input_type -> order.v1.CreateOrderRequest
-	5,  // 10: order.v1.OrderService.CancelOrder:input_type -> order.v1.CancelOrderRequest
-	4,  // 11: order.v1.OrderService.CreateOrder:output_type -> order.v1.CreateOrderResponse
-	6,  // 12: order.v1.OrderService.CancelOrder:output_type -> order.v1.CancelOrderResponse
-	11, // [11:13] is the sub-list for method output_type
-	9,  // [9:11] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	3,  // 9: order.v1.StartTripResponse.order:type_name -> order.v1.Order
+	3,  // 10: order.v1.CompleteTripResponse.order:type_name -> order.v1.Order
+	2,  // 11: order.v1.OrderService.CreateOrder:input_type -> order.v1.CreateOrderRequest
+	5,  // 12: order.v1.OrderService.CancelOrder:input_type -> order.v1.CancelOrderRequest
+	7,  // 13: order.v1.OrderService.StartTrip:input_type -> order.v1.StartTripRequest
+	9,  // 14: order.v1.OrderService.CompleteTrip:input_type -> order.v1.CompleteTripRequest
+	4,  // 15: order.v1.OrderService.CreateOrder:output_type -> order.v1.CreateOrderResponse
+	6,  // 16: order.v1.OrderService.CancelOrder:output_type -> order.v1.CancelOrderResponse
+	8,  // 17: order.v1.OrderService.StartTrip:output_type -> order.v1.StartTripResponse
+	10, // 18: order.v1.OrderService.CompleteTrip:output_type -> order.v1.CompleteTripResponse
+	15, // [15:19] is the sub-list for method output_type
+	11, // [11:15] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_shared_proto_order_service_order_service_proto_init() }
@@ -586,7 +782,7 @@ func file_shared_proto_order_service_order_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_shared_proto_order_service_order_service_proto_rawDesc), len(file_shared_proto_order_service_order_service_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   6,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

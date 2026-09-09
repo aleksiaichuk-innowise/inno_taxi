@@ -19,8 +19,10 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	OrderService_CreateOrder_FullMethodName = "/order.v1.OrderService/CreateOrder"
-	OrderService_CancelOrder_FullMethodName = "/order.v1.OrderService/CancelOrder"
+	OrderService_CreateOrder_FullMethodName  = "/order.v1.OrderService/CreateOrder"
+	OrderService_CancelOrder_FullMethodName  = "/order.v1.OrderService/CancelOrder"
+	OrderService_StartTrip_FullMethodName    = "/order.v1.OrderService/StartTrip"
+	OrderService_CompleteTrip_FullMethodName = "/order.v1.OrderService/CompleteTrip"
 )
 
 // OrderServiceClient is the client API for OrderService service.
@@ -29,6 +31,8 @@ const (
 type OrderServiceClient interface {
 	CreateOrder(ctx context.Context, in *CreateOrderRequest, opts ...grpc.CallOption) (*CreateOrderResponse, error)
 	CancelOrder(ctx context.Context, in *CancelOrderRequest, opts ...grpc.CallOption) (*CancelOrderResponse, error)
+	StartTrip(ctx context.Context, in *StartTripRequest, opts ...grpc.CallOption) (*StartTripResponse, error)
+	CompleteTrip(ctx context.Context, in *CompleteTripRequest, opts ...grpc.CallOption) (*CompleteTripResponse, error)
 }
 
 type orderServiceClient struct {
@@ -59,12 +63,34 @@ func (c *orderServiceClient) CancelOrder(ctx context.Context, in *CancelOrderReq
 	return out, nil
 }
 
+func (c *orderServiceClient) StartTrip(ctx context.Context, in *StartTripRequest, opts ...grpc.CallOption) (*StartTripResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(StartTripResponse)
+	err := c.cc.Invoke(ctx, OrderService_StartTrip_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *orderServiceClient) CompleteTrip(ctx context.Context, in *CompleteTripRequest, opts ...grpc.CallOption) (*CompleteTripResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CompleteTripResponse)
+	err := c.cc.Invoke(ctx, OrderService_CompleteTrip_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // OrderServiceServer is the server API for OrderService service.
 // All implementations must embed UnimplementedOrderServiceServer
 // for forward compatibility.
 type OrderServiceServer interface {
 	CreateOrder(context.Context, *CreateOrderRequest) (*CreateOrderResponse, error)
 	CancelOrder(context.Context, *CancelOrderRequest) (*CancelOrderResponse, error)
+	StartTrip(context.Context, *StartTripRequest) (*StartTripResponse, error)
+	CompleteTrip(context.Context, *CompleteTripRequest) (*CompleteTripResponse, error)
 	mustEmbedUnimplementedOrderServiceServer()
 }
 
@@ -80,6 +106,12 @@ func (UnimplementedOrderServiceServer) CreateOrder(context.Context, *CreateOrder
 }
 func (UnimplementedOrderServiceServer) CancelOrder(context.Context, *CancelOrderRequest) (*CancelOrderResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CancelOrder not implemented")
+}
+func (UnimplementedOrderServiceServer) StartTrip(context.Context, *StartTripRequest) (*StartTripResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method StartTrip not implemented")
+}
+func (UnimplementedOrderServiceServer) CompleteTrip(context.Context, *CompleteTripRequest) (*CompleteTripResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CompleteTrip not implemented")
 }
 func (UnimplementedOrderServiceServer) mustEmbedUnimplementedOrderServiceServer() {}
 func (UnimplementedOrderServiceServer) testEmbeddedByValue()                      {}
@@ -138,6 +170,42 @@ func _OrderService_CancelOrder_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _OrderService_StartTrip_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StartTripRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrderServiceServer).StartTrip(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: OrderService_StartTrip_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrderServiceServer).StartTrip(ctx, req.(*StartTripRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _OrderService_CompleteTrip_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CompleteTripRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrderServiceServer).CompleteTrip(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: OrderService_CompleteTrip_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrderServiceServer).CompleteTrip(ctx, req.(*CompleteTripRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // OrderService_ServiceDesc is the grpc.ServiceDesc for OrderService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -152,6 +220,14 @@ var OrderService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CancelOrder",
 			Handler:    _OrderService_CancelOrder_Handler,
+		},
+		{
+			MethodName: "StartTrip",
+			Handler:    _OrderService_StartTrip_Handler,
+		},
+		{
+			MethodName: "CompleteTrip",
+			Handler:    _OrderService_CompleteTrip_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -51,6 +51,22 @@ message CancelOrderResponse {
   Order order = 1;
 }
 
+message StartTripRequest {
+  string order_id = 1;
+}
+
+message StartTripResponse {
+  Order order = 1;
+}
+
+message CompleteTripRequest {
+  string order_id = 1;
+}
+
+message CompleteTripResponse {
+  Order order = 1;
+}
+
 message Location {
   double lat = 1;
   double long =2;
@@ -68,6 +84,18 @@ service OrderService {
   rpc CancelOrder(CancelOrderRequest) returns (CancelOrderResponse) {
     option (google.api.http) = {
       post: "/v1/orders/{order_id}/cancel"
+    };
+  }
+
+  rpc StartTrip(StartTripRequest) returns (StartTripResponse) {
+    option (google.api.http) = {
+      post: "/v1/orders/{order_id}/start"
+    };
+  }
+
+  rpc CompleteTrip(CompleteTripRequest) returns (CompleteTripResponse) {
+    option (google.api.http) = {
+      post: "/v1/orders/{order_id}/complete"
     };
   }
 }

@@ -78,3 +78,53 @@ func (o OrderServer) CancelOrder(ctx context.Context, req *order_service.CancelO
 		Order: orderToProto(res),
 	}, nil
 }
+
+func (o OrderServer) StartTrip(ctx context.Context, req *order_service.StartTripRequest) (*order_service.StartTripResponse, error) {
+	userId, ok := interceptor.UserIDFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.InvalidArgument, "missing user ID")
+	}
+	if req.GetOrderId() == "" {
+		return nil, status.Error(codes.InvalidArgument, "order id is required")
+	}
+
+	res, err := o.svc.StartTrip(ctx, req.GetOrderId(), userId)
+	if err != nil {
+		switch {
+		case errors.Is(err, errorsx.ErrOrderNotFound):
+			return nil, status.Error(codes.NotFound, err.Error())
+		case errors.Is(err, errorsx.ErrOrderNotStartable):
+			return nil, status.Error(codes.FailedPrecondition, err.Error())
+		default:
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+	}
+	return &order_service.StartTripResponse{
+		Order: orderToProto(res),
+	}, nil
+}
+
+func (o OrderServer) CompleteTrip(ctx context.Context, req *order_service.CompleteTripRequest) (*order_service.CompleteTripResponse, error) {
+	userId, ok := interceptor.UserIDFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.InvalidArgument, "missing user ID")
+	}
+	if req.GetOrderId() == "" {
+		return nil, status.Error(codes.InvalidArgument, "order id is required")
+	}
+
+	res, err := o.svc.CompleteTrip(ctx, req.GetOrderId(), userId)
+	if err != nil {
+		switch {
+		case errors.Is(err, errorsx.ErrOrderNotFound):
+			return nil, status.Error(codes.NotFound, err.Error())
+		case errors.Is(err, errorsx.ErrOrderNotCompletable):
+			return nil, status.Error(codes.FailedPrecondition, err.Error())
+		default:
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+	}
+	return &order_service.CompleteTripResponse{
+		Order: orderToProto(res),
+	}, nil
+}

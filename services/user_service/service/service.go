@@ -16,10 +16,15 @@ type UserRepository interface {
 	AddRole(ctx context.Context, id, role string) error
 }
 
-type UserService struct {
-	userRepo UserRepository
+type KafkaGateway interface {
+	PublishUserRegistered(ctx context.Context, user serviceEntity.User) error
 }
 
-func NewUserService(userRepo UserRepository) *UserService {
-	return &UserService{userRepo}
+type UserService struct {
+	userRepo UserRepository
+	kafkaGw  KafkaGateway
+}
+
+func NewUserService(userRepo UserRepository, kafkaGw KafkaGateway) *UserService {
+	return &UserService{userRepo: userRepo, kafkaGw: kafkaGw}
 }

@@ -2,6 +2,7 @@ package config
 
 import (
 	"strconv"
+	"strings"
 	"time"
 
 	shared "github.com/aleksiaichuk-innowise/inno_taxi/shared/config"
@@ -12,6 +13,7 @@ type Config struct {
 	DbConn   shared.PostgresConfig
 	Redis    *shared.RedisConfig
 	HttpHost shared.HttpHostConfig
+	Kafka    shared.KafkaConfig
 }
 
 func Load() *Config {
@@ -43,6 +45,11 @@ func Load() *Config {
 		HttpHost: shared.HttpHostConfig{
 			Host: shared.GetEnvFallback("HTTP_WALLET_HOST", "localhost"),
 			Port: shared.GetEnvFallback("HTTP_WALLET_PORT", "8084"),
+		},
+		Kafka: shared.KafkaConfig{
+			Brokers:  strings.Split(shared.GetEnvFallback("KAFKA_BROKERS", "localhost:9092"), ","),
+			Username: shared.GetEnvFallback("KAFKA_USERNAME", ""),
+			Password: shared.GetEnvFallback("KAFKA_PASSWORD", ""),
 		},
 	}
 }

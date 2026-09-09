@@ -12,8 +12,10 @@ import (
 
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/wallet_service/app/db/postgres"
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/wallet_service/app/db/redis"
+	appkafka "github.com/aleksiaichuk-innowise/inno_taxi/services/wallet_service/app/kafka"
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/wallet_service/config"
 	http_handler "github.com/aleksiaichuk-innowise/inno_taxi/services/wallet_service/handler/http"
+	kafkahandler "github.com/aleksiaichuk-innowise/inno_taxi/services/wallet_service/handler/kafka"
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/wallet_service/repository/pg_repo"
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/wallet_service/repository/redis_repo"
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/wallet_service/service"
@@ -43,6 +45,33 @@ func Run(cfg *config.Config) error {
 	repo := pg_repo.NewPgRepo(db)
 	cache := redis_repo.NewTransactionCache(redisClient)
 	walletSvc := service.NewWalletService(repo, cache)
+
+	consumerGroup, err := appkafka.NewConsumerGroup(cfg.Kafka.Brokers)
+	if err != nil {
+		return fmt.Errorf("new kafka consumer group: %w", err)
+	}
+	defer func() {
+		if err := consumerGroup.Close(); err != nil {
+			slog.Error("close kafka consumer group", "error", err)
+		}
+	}()
+
+	consumer := kafkahandler.NewUserRegisteredConsumer(walletSvc)
+	go func() {
+		for ctx.Err() == nil {
+			if err := consumerGroup.Consume(ctx, []string{kafkahandler.TopicUserRegistered}, consumer); err != nil {
+				if errors.Is(err, context.Canceled) {
+					return
+				}
+				slog.Error("kafka consumer group session ended", "error", err)
+			}
+		}
+	}()
+	go func() {
+		for err := range consumerGroup.Errors() {
+			slog.Error("kafka consumer group error", "error", err)
+		}
+	}()
 
 	h := http_handler.NewHandler(walletSvc)
 	r := gin.Default()

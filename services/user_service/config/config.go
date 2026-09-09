@@ -1,6 +1,8 @@
 package config
 
 import (
+	"strings"
+
 	shared "github.com/aleksiaichuk-innowise/inno_taxi/shared/config"
 	"github.com/joho/godotenv"
 )
@@ -9,6 +11,7 @@ type Config struct {
 	Mongo *shared.MongoConfig
 	Host  *shared.HttpHostConfig
 	JWT   *JWTConfig
+	Kafka shared.KafkaConfig
 }
 
 type JWTConfig struct {
@@ -31,6 +34,11 @@ func Load() *Config {
 		},
 		JWT: &JWTConfig{
 			Secret: shared.GetEnvFallback("JWT_SECRET", "taxi"),
+		},
+		Kafka: shared.KafkaConfig{
+			Brokers:  strings.Split(shared.GetEnvFallback("KAFKA_BROKERS", "localhost:9092"), ","),
+			Username: shared.GetEnvFallback("KAFKA_USERNAME", ""),
+			Password: shared.GetEnvFallback("KAFKA_PASSWORD", ""),
 		},
 	}
 }

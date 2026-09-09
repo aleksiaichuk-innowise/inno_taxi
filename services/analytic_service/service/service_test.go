@@ -16,6 +16,8 @@ type fakeOrderEventRepository struct {
 	daily    []service_dto.DailyOrderCount
 	statsErr error
 	dailyErr error
+
+	insertedUsers []service_dto.UserRegisteredEvent
 }
 
 func (f *fakeOrderEventRepository) InsertOrderEvent(_ context.Context, evt service_dto.OrderEvent) error {
@@ -37,4 +39,11 @@ func (f *fakeOrderEventRepository) GetDailyOrderCounts(_ context.Context, _, _ t
 		return nil, f.dailyErr
 	}
 	return f.daily, nil
+}
+
+func (f *fakeOrderEventRepository) InsertUserRegisteredEvent(_ context.Context, evt service_dto.UserRegisteredEvent) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.insertedUsers = append(f.insertedUsers, evt)
+	return nil
 }

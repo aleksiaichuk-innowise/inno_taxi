@@ -12,13 +12,18 @@ import (
 	"github.com/ory/dockertest/v3"
 	"github.com/ory/dockertest/v3/docker"
 
+	"github.com/ClickHouse/clickhouse-go/v2"
+
 	dbclickhouse "github.com/aleksiaichuk-innowise/inno_taxi/services/analytic_service/app/db/clickhouse"
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/analytic_service/config"
 	service_dto "github.com/aleksiaichuk-innowise/inno_taxi/services/analytic_service/entity/service"
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/analytic_service/repository/ch_repo"
 )
 
-var testRepo *ch_repo.ClickHouseRepository
+var (
+	testRepo *ch_repo.ClickHouseRepository
+	testConn clickhouse.Conn
+)
 
 func TestMain(m *testing.M) {
 	os.Exit(run(m))
@@ -56,9 +61,7 @@ func run(m *testing.M) int {
 	}
 
 	ctx := context.Background()
-	var conn interface {
-		Close() error
-	}
+	var conn clickhouse.Conn
 	var chRepo *ch_repo.ClickHouseRepository
 	pool.MaxWait = 60 * time.Second
 	if err := pool.Retry(func() error {
@@ -76,6 +79,7 @@ func run(m *testing.M) int {
 	defer conn.Close()
 
 	testRepo = chRepo
+	testConn = conn
 
 	return m.Run()
 }
@@ -143,5 +147,33 @@ func TestClickHouseRepository_ReplacingMergeTree_DedupesRedeliveredEvent(t *test
 	// ReplacingMergeTree hasn't run a background merge yet.
 	if stats.CountsByStatus["created"] != 1 {
 		t.Fatalf("expected the redelivered event to be deduped to 1, got %d", stats.CountsByStatus["created"])
+	}
+}
+
+func TestClickHouseRepository_InsertUserRegisteredEvent(t *testing.T) {
+	ctx := t.Context()
+	now := time.Now().UTC().Truncate(time.Millisecond)
+
+	evt := service_dto.UserRegisteredEvent{
+		UserID:       "user-registered-1",
+		Name:         "Jane Doe",
+		Email:        "jane@example.com",
+		Phone:        "+15550001111",
+		Role:         "driver",
+		RegisteredAt: now,
+	}
+	if err := testRepo.InsertUserRegisteredEvent(ctx, evt); err != nil {
+		t.Fatalf("insert user registered event: %v", err)
+	}
+
+	var count uint64
+	row := testConn.QueryRow(ctx, `
+		SELECT count() FROM user_registration_events FINAL WHERE user_id = ?
+	`, evt.UserID)
+	if err := row.Scan(&count); err != nil {
+		t.Fatalf("query user_registration_events: %v", err)
+	}
+	if count != 1 {
+		t.Fatalf("got %d rows for %s, want 1", count, evt.UserID)
 	}
 }

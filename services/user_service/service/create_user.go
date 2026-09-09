@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -37,6 +38,10 @@ func (s UserService) CreateUser(ctx context.Context, input serviceEntity.Registe
 	created, err := s.userRepo.CreateUser(ctx, user)
 	if err != nil {
 		return nil, err
+	}
+
+	if err := s.kafkaGw.PublishUserRegistered(ctx, *created); err != nil {
+		slog.ErrorContext(ctx, "publish user registered event", "error", err, "user_id", created.ID)
 	}
 
 	return created, nil

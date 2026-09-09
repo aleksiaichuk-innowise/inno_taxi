@@ -14,8 +14,10 @@ import (
 	"github.com/go-playground/validator/v10"
 
 	dbmongo "github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/app/db/mongo"
+	appkafka "github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/app/kafka"
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/config"
 	entity "github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/entity/service"
+	"github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/gateway"
 	httphandler "github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/handler/http"
 	mongomigration "github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/migrations/mongo"
 	mongorepo "github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/repository/mongo"
@@ -44,8 +46,19 @@ func Run(cfg *config.Config) error {
 		return fmt.Errorf("run migrations: %w", err)
 	}
 
+	kafkaProducer, err := appkafka.NewPublisher(cfg.Kafka.Brokers)
+	if err != nil {
+		return fmt.Errorf("new kafka producer: %w", err)
+	}
+	defer func() {
+		if err := kafkaProducer.Close(); err != nil {
+			slog.Warn("close kafka producer", "error", err)
+		}
+	}()
+	kafkaGw := gateway.NewKafkaGateway(kafkaProducer)
+
 	userRepo := mongorepo.NewUserRepository(mongoConn)
-	userSrv := service.NewUserService(userRepo)
+	userSrv := service.NewUserService(userRepo, kafkaGw)
 
 	validate := validator.New()
 	if err := validation.Register(validate); err != nil {

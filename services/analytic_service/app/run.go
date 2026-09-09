@@ -32,30 +32,57 @@ func Run(cfg *config.Config) error {
 	repo := ch_repo.NewClickHouseRepository(chConn)
 	analyticSvc := service.NewAnalyticService(repo)
 
-	consumerGroup, err := appkafka.NewConsumerGroup(cfg.Kafka.Brokers)
+	orderConsumerGroup, err := appkafka.NewConsumerGroup(cfg.Kafka.Brokers, appkafka.ConsumerGroupIDOrderCreated)
 	if err != nil {
-		return fmt.Errorf("new kafka consumer group: %w", err)
+		return fmt.Errorf("new order_created kafka consumer group: %w", err)
 	}
 	defer func() {
-		if err := consumerGroup.Close(); err != nil {
-			slog.Error("close kafka consumer group", "error", err)
+		if err := orderConsumerGroup.Close(); err != nil {
+			slog.Error("close order_created kafka consumer group", "error", err)
 		}
 	}()
 
-	consumer := kafkahandler.NewOrderCreatedConsumer(analyticSvc)
+	orderConsumer := kafkahandler.NewOrderCreatedConsumer(analyticSvc)
 	go func() {
 		for ctx.Err() == nil {
-			if err := consumerGroup.Consume(ctx, []string{kafkahandler.TopicOrderCreated}, consumer); err != nil {
+			if err := orderConsumerGroup.Consume(ctx, []string{kafkahandler.TopicOrderCreated}, orderConsumer); err != nil {
 				if errors.Is(err, context.Canceled) {
 					return
 				}
-				slog.Error("kafka consumer group session ended", "error", err)
+				slog.Error("order_created kafka consumer group session ended", "error", err)
 			}
 		}
 	}()
 	go func() {
-		for err := range consumerGroup.Errors() {
-			slog.Error("kafka consumer group error", "error", err)
+		for err := range orderConsumerGroup.Errors() {
+			slog.Error("order_created kafka consumer group error", "error", err)
+		}
+	}()
+
+	userConsumerGroup, err := appkafka.NewConsumerGroup(cfg.Kafka.Brokers, appkafka.ConsumerGroupIDUserRegistered)
+	if err != nil {
+		return fmt.Errorf("new user_registered kafka consumer group: %w", err)
+	}
+	defer func() {
+		if err := userConsumerGroup.Close(); err != nil {
+			slog.Error("close user_registered kafka consumer group", "error", err)
+		}
+	}()
+
+	userConsumer := kafkahandler.NewUserRegisteredConsumer(analyticSvc)
+	go func() {
+		for ctx.Err() == nil {
+			if err := userConsumerGroup.Consume(ctx, []string{kafkahandler.TopicUserRegistered}, userConsumer); err != nil {
+				if errors.Is(err, context.Canceled) {
+					return
+				}
+				slog.Error("user_registered kafka consumer group session ended", "error", err)
+			}
+		}
+	}()
+	go func() {
+		for err := range userConsumerGroup.Errors() {
+			slog.Error("user_registered kafka consumer group error", "error", err)
 		}
 	}()
 

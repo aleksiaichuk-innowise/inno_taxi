@@ -23,6 +23,19 @@ func TestIngestOrderEvent(t *testing.T) {
 	}
 }
 
+func TestIngestUserRegisteredEvent(t *testing.T) {
+	repo := &fakeOrderEventRepository{}
+	svc := NewAnalyticService(repo)
+
+	evt := service_dto.UserRegisteredEvent{UserID: "user-1", Name: "Jane Doe", Role: "driver", RegisteredAt: time.Now()}
+	if err := svc.IngestUserRegisteredEvent(context.Background(), evt); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(repo.insertedUsers) != 1 || repo.insertedUsers[0].UserID != "user-1" {
+		t.Fatalf("expected the event to be inserted, got %+v", repo.insertedUsers)
+	}
+}
+
 func TestGetOrderStats_InvalidRange(t *testing.T) {
 	repo := &fakeOrderEventRepository{}
 	svc := NewAnalyticService(repo)

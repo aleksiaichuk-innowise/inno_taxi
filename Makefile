@@ -115,6 +115,12 @@ proto-order: ## Generate Go/gRPC-Gateway/OpenAPI code from shared/proto/order_se
 		-I shared/third_party/googleapis \
 		shared/proto/order_service/order_service.proto shared/proto/order_service/kafka.proto
 
+proto-user: ## Generate Go code from shared/proto/user_service/*.proto (Kafka-only, no gRPC/gateway surface)
+	protoc \
+		--go_out=. --go_opt=paths=source_relative \
+		-I . \
+		shared/proto/user_service/kafka.proto
+
 ## --- Postgres migrations (order_service, via goose) ---
 
 MIGRATIONS_DIR := services/order_service/migrations/postgres
@@ -164,4 +170,4 @@ migrate-wallet-down: ## Roll back the last wallet_service migration
 migrate-wallet-status: ## Show wallet_service migration status
 	goose -dir $(WALLET_MIGRATIONS_DIR) postgres "$(PG_WALLET_DSN)" status
 
-.PHONY: help mongo-up build-user run-user test-user test-user-integration build-driver run-driver test-driver build-order run-order test-order test-order-integration build-auth run-auth test-auth build-gateway build-wallet run-wallet test-wallet test-wallet-integration build-analytic run-analytic test-analytic test-analytic-integration proto-tools proto-order goose-tools migrate-order-create migrate-order-up migrate-order-down migrate-order-status migrate-wallet-create migrate-wallet-up migrate-wallet-down migrate-wallet-status
+.PHONY: help mongo-up build-user run-user test-user test-user-integration build-driver run-driver test-driver build-order run-order test-order test-order-integration build-auth run-auth test-auth build-gateway build-wallet run-wallet test-wallet test-wallet-integration build-analytic run-analytic test-analytic test-analytic-integration proto-tools proto-order proto-user goose-tools migrate-order-create migrate-order-up migrate-order-down migrate-order-status migrate-wallet-create migrate-wallet-up migrate-wallet-down migrate-wallet-status

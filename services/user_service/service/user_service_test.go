@@ -62,6 +62,16 @@ func (f *fakeUserRepository) AddRole(_ context.Context, _ string, role string) e
 	return f.addRoleErr
 }
 
+type fakeKafkaGateway struct {
+	published []serviceEntity.User
+	err       error
+}
+
+func (f *fakeKafkaGateway) PublishUserRegistered(_ context.Context, user serviceEntity.User) error {
+	f.published = append(f.published, user)
+	return f.err
+}
+
 func hashPassword(t *testing.T, password string) string {
 	t.Helper()
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
@@ -80,7 +90,7 @@ func TestUserService_VerifyCredentials_Success(t *testing.T) {
 			Roles:        []serviceEntity.Role{serviceEntity.RoleUser},
 		},
 	}
-	svc := NewUserService(repo)
+	svc := NewUserService(repo, &fakeKafkaGateway{})
 
 	got, err := svc.VerifyCredentials(context.Background(), "user@example.com", "correct-password")
 
@@ -100,7 +110,7 @@ func TestUserService_VerifyCredentials_WrongPassword(t *testing.T) {
 			PasswordHash: hashPassword(t, "correct-password"),
 		},
 	}
-	svc := NewUserService(repo)
+	svc := NewUserService(repo, &fakeKafkaGateway{})
 
 	_, err := svc.VerifyCredentials(context.Background(), "user@example.com", "wrong-password")
 
@@ -111,7 +121,7 @@ func TestUserService_VerifyCredentials_WrongPassword(t *testing.T) {
 
 func TestUserService_VerifyCredentials_UserNotFound(t *testing.T) {
 	repo := &fakeUserRepository{err: errorsx.ErrUserNotFound}
-	svc := NewUserService(repo)
+	svc := NewUserService(repo, &fakeKafkaGateway{})
 
 	_, err := svc.VerifyCredentials(context.Background(), "missing@example.com", "any-password")
 
@@ -129,7 +139,7 @@ func TestUserService_GetProfile_Success(t *testing.T) {
 			Roles: []serviceEntity.Role{serviceEntity.RoleUser},
 		},
 	}
-	svc := NewUserService(repo)
+	svc := NewUserService(repo, &fakeKafkaGateway{})
 
 	got, err := svc.GetProfile(context.Background(), "1")
 
@@ -143,7 +153,7 @@ func TestUserService_GetProfile_Success(t *testing.T) {
 
 func TestUserService_GetProfile_NotFound(t *testing.T) {
 	repo := &fakeUserRepository{err: errorsx.ErrUserNotFound}
-	svc := NewUserService(repo)
+	svc := NewUserService(repo, &fakeKafkaGateway{})
 
 	_, err := svc.GetProfile(context.Background(), "missing-id")
 
@@ -161,7 +171,7 @@ func TestUserService_UpdateProfile_Success(t *testing.T) {
 		},
 		updateUser: updated,
 	}
-	svc := NewUserService(repo)
+	svc := NewUserService(repo, &fakeKafkaGateway{})
 
 	got, err := svc.UpdateProfile(context.Background(), "1", serviceEntity.ProfileInput{
 		Name:  "New Name",
@@ -179,7 +189,7 @@ func TestUserService_UpdateProfile_Success(t *testing.T) {
 
 func TestUserService_UpdateProfile_NotFound(t *testing.T) {
 	repo := &fakeUserRepository{updateErr: errorsx.ErrUserNotFound}
-	svc := NewUserService(repo)
+	svc := NewUserService(repo, &fakeKafkaGateway{})
 
 	_, err := svc.UpdateProfile(context.Background(), "missing-id", serviceEntity.ProfileInput{
 		Name:  "New Name",
@@ -199,7 +209,7 @@ func TestUserService_UpdatePassword_Success(t *testing.T) {
 			PasswordHash: hashPassword(t, "old-password"),
 		},
 	}
-	svc := NewUserService(repo)
+	svc := NewUserService(repo, &fakeKafkaGateway{})
 
 	err := svc.UpdatePassword(context.Background(), "1", "old-password", "new-password")
 
@@ -221,7 +231,7 @@ func TestUserService_UpdatePassword_WrongCurrentPassword(t *testing.T) {
 			PasswordHash: hashPassword(t, "old-password"),
 		},
 	}
-	svc := NewUserService(repo)
+	svc := NewUserService(repo, &fakeKafkaGateway{})
 
 	err := svc.UpdatePassword(context.Background(), "1", "wrong-password", "new-password")
 
@@ -235,7 +245,7 @@ func TestUserService_UpdatePassword_WrongCurrentPassword(t *testing.T) {
 
 func TestUserService_UpdatePassword_NotFound(t *testing.T) {
 	repo := &fakeUserRepository{err: errorsx.ErrUserNotFound}
-	svc := NewUserService(repo)
+	svc := NewUserService(repo, &fakeKafkaGateway{})
 
 	err := svc.UpdatePassword(context.Background(), "missing-id", "old-password", "new-password")
 
@@ -246,7 +256,7 @@ func TestUserService_UpdatePassword_NotFound(t *testing.T) {
 
 func TestUserService_DeleteProfile_Success(t *testing.T) {
 	repo := &fakeUserRepository{}
-	svc := NewUserService(repo)
+	svc := NewUserService(repo, &fakeKafkaGateway{})
 
 	err := svc.DeleteProfile(context.Background(), "1")
 
@@ -260,7 +270,7 @@ func TestUserService_DeleteProfile_Success(t *testing.T) {
 
 func TestUserService_DeleteProfile_NotFound(t *testing.T) {
 	repo := &fakeUserRepository{deleteErr: errorsx.ErrUserNotFound}
-	svc := NewUserService(repo)
+	svc := NewUserService(repo, &fakeKafkaGateway{})
 
 	err := svc.DeleteProfile(context.Background(), "missing-id")
 
@@ -271,7 +281,7 @@ func TestUserService_DeleteProfile_NotFound(t *testing.T) {
 
 func TestUserService_AssignRole_Success(t *testing.T) {
 	repo := &fakeUserRepository{}
-	svc := NewUserService(repo)
+	svc := NewUserService(repo, &fakeKafkaGateway{})
 
 	err := svc.AssignRole(context.Background(), "1", serviceEntity.RoleAnalyst)
 
@@ -288,7 +298,7 @@ func TestUserService_AssignRole_Success(t *testing.T) {
 
 func TestUserService_AssignRole_InvalidRole(t *testing.T) {
 	repo := &fakeUserRepository{}
-	svc := NewUserService(repo)
+	svc := NewUserService(repo, &fakeKafkaGateway{})
 
 	err := svc.AssignRole(context.Background(), "1", serviceEntity.Role("bogus"))
 
@@ -302,7 +312,7 @@ func TestUserService_AssignRole_InvalidRole(t *testing.T) {
 
 func TestUserService_AssignRole_NotFound(t *testing.T) {
 	repo := &fakeUserRepository{addRoleErr: errorsx.ErrUserNotFound}
-	svc := NewUserService(repo)
+	svc := NewUserService(repo, &fakeKafkaGateway{})
 
 	err := svc.AssignRole(context.Background(), "missing-id", serviceEntity.RoleAnalyst)
 

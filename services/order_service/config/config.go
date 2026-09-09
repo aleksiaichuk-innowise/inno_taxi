@@ -16,6 +16,7 @@ type Config struct {
 	HttpHost      shared.HttpHostConfig
 	JWT           *JWTConfig
 	WalletService *WalletServiceConfig
+	DriverService *DriverServiceConfig
 }
 
 type JWTConfig struct {
@@ -23,6 +24,10 @@ type JWTConfig struct {
 }
 
 type WalletServiceConfig struct {
+	BaseURL string
+}
+
+type DriverServiceConfig struct {
 	BaseURL string
 }
 
@@ -70,6 +75,9 @@ func Load() *Config {
 		},
 		WalletService: &WalletServiceConfig{
 			BaseURL: shared.GetEnvFallback("WALLET_SERVICE_BASE_URL", "http://localhost:8084"),
+		},
+		DriverService: &DriverServiceConfig{
+			BaseURL: shared.GetEnvFallback("DRIVER_SERVICE_BASE_URL", "http://localhost:8081"),
 		},
 	}
 }

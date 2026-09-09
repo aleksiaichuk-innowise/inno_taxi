@@ -23,6 +23,11 @@ type fakeOrderRepository struct {
 	updateOrder  *service_dto.Order
 	updateErr    error
 	updateCalled bool
+
+	assignedOrder      *service_dto.Order
+	assignDriverErr    error
+	assignDriverCalled bool
+	assignDriverArg    string
 }
 
 func (f *fakeOrderRepository) CreateOrder(_ context.Context, id string, price int64, input service_dto.CreateOrderInput) (service_dto.Order, error) {
@@ -49,6 +54,15 @@ func (f *fakeOrderRepository) UpdateOrderStatus(_ context.Context, _ string, _ s
 		return service_dto.Order{}, f.updateErr
 	}
 	return *f.updateOrder, nil
+}
+
+func (f *fakeOrderRepository) AssignDriver(_ context.Context, _, driverID string) (service_dto.Order, error) {
+	f.assignDriverCalled = true
+	f.assignDriverArg = driverID
+	if f.assignDriverErr != nil {
+		return service_dto.Order{}, f.assignDriverErr
+	}
+	return *f.assignedOrder, nil
 }
 
 type fakeOrderGateway struct {
@@ -86,6 +100,30 @@ func (f *fakeWalletGateway) Refund(_ context.Context, userID string, amount int6
 	return f.refundErr
 }
 
+type fakeDriverGateway struct {
+	claimUserID string
+	claimOK     bool
+	claimErr    error
+	releaseErr  error
+
+	claimCalled   bool
+	claimArg      string
+	releaseCalled bool
+	releaseArg    string
+}
+
+func (f *fakeDriverGateway) ClaimAvailableDriver(_ context.Context, taxiType string) (string, bool, error) {
+	f.claimCalled = true
+	f.claimArg = taxiType
+	return f.claimUserID, f.claimOK, f.claimErr
+}
+
+func (f *fakeDriverGateway) ReleaseDriver(_ context.Context, userID string) error {
+	f.releaseCalled = true
+	f.releaseArg = userID
+	return f.releaseErr
+}
+
 func validInput() service_dto.CreateOrderInput {
 	return service_dto.CreateOrderInput{
 		UserID:      "user-1",
@@ -99,7 +137,7 @@ func TestCreateOrder_InvalidTaxiType(t *testing.T) {
 	repo := &fakeOrderRepository{}
 	gw := &fakeOrderGateway{}
 	wallet := &fakeWalletGateway{}
-	svc := NewOrderService(repo, gw, wallet)
+	svc := NewOrderService(repo, gw, wallet, &fakeDriverGateway{})
 
 	input := validInput()
 	input.TaxiType = "not-a-real-type"
@@ -117,7 +155,7 @@ func TestCreateOrder_InvalidLocation(t *testing.T) {
 	repo := &fakeOrderRepository{}
 	gw := &fakeOrderGateway{}
 	wallet := &fakeWalletGateway{}
-	svc := NewOrderService(repo, gw, wallet)
+	svc := NewOrderService(repo, gw, wallet, &fakeDriverGateway{})
 
 	input := validInput()
 	input.Destination = service_dto.Location{}
@@ -135,7 +173,7 @@ func TestCreateOrder_ChargeFailsInsufficientFunds(t *testing.T) {
 	repo := &fakeOrderRepository{}
 	gw := &fakeOrderGateway{}
 	wallet := &fakeWalletGateway{chargeErr: errorsx.ErrInsufficientFunds}
-	svc := NewOrderService(repo, gw, wallet)
+	svc := NewOrderService(repo, gw, wallet, &fakeDriverGateway{})
 
 	_, err := svc.CreateOrder(context.Background(), validInput())
 	if !errors.Is(err, errorsx.ErrInsufficientFunds) {
@@ -151,7 +189,7 @@ func TestCreateOrder_ChargesBeforePersisting(t *testing.T) {
 	repo := &fakeOrderRepository{order: &created}
 	gw := &fakeOrderGateway{}
 	wallet := &fakeWalletGateway{}
-	svc := NewOrderService(repo, gw, wallet)
+	svc := NewOrderService(repo, gw, wallet, &fakeDriverGateway{})
 
 	got, err := svc.CreateOrder(context.Background(), validInput())
 	if err != nil {
@@ -185,7 +223,7 @@ func TestCreateOrder_RefundsOnInsertFailure(t *testing.T) {
 	repo := &fakeOrderRepository{err: repoErr}
 	gw := &fakeOrderGateway{}
 	wallet := &fakeWalletGateway{}
-	svc := NewOrderService(repo, gw, wallet)
+	svc := NewOrderService(repo, gw, wallet, &fakeDriverGateway{})
 
 	_, err := svc.CreateOrder(context.Background(), validInput())
 	if !errors.Is(err, repoErr) {
@@ -207,7 +245,7 @@ func TestCreateOrder_PublishesAfterPersisting(t *testing.T) {
 	repo := &fakeOrderRepository{order: &created}
 	gw := &fakeOrderGateway{}
 	wallet := &fakeWalletGateway{}
-	svc := NewOrderService(repo, gw, wallet)
+	svc := NewOrderService(repo, gw, wallet, &fakeDriverGateway{})
 
 	got, err := svc.CreateOrder(context.Background(), validInput())
 	if err != nil {
@@ -229,7 +267,7 @@ func TestCreateOrder_PublishFailureDoesNotFailCreateOrder(t *testing.T) {
 	repo := &fakeOrderRepository{order: &created}
 	gw := &fakeOrderGateway{err: errors.New("kafka unreachable")}
 	wallet := &fakeWalletGateway{}
-	svc := NewOrderService(repo, gw, wallet)
+	svc := NewOrderService(repo, gw, wallet, &fakeDriverGateway{})
 
 	got, err := svc.CreateOrder(context.Background(), validInput())
 	if err != nil {
@@ -237,5 +275,93 @@ func TestCreateOrder_PublishFailureDoesNotFailCreateOrder(t *testing.T) {
 	}
 	if got != created {
 		t.Fatalf("expected %+v, got %+v", created, got)
+	}
+}
+
+func TestCreateOrder_AssignsDriverWhenAvailable(t *testing.T) {
+	created := service_dto.Order{ID: "order-1", UserID: "user-1", TaxiType: service_dto.TaxiTypeComfort, Status: service_dto.StatusCreated}
+	assigned := created
+	assigned.Status = service_dto.StatusDriverAssigned
+	driverID := "driver-1"
+	assigned.DriverID = &driverID
+
+	repo := &fakeOrderRepository{order: &created, assignedOrder: &assigned}
+	gw := &fakeOrderGateway{}
+	wallet := &fakeWalletGateway{}
+	driver := &fakeDriverGateway{claimUserID: "driver-1", claimOK: true}
+	svc := NewOrderService(repo, gw, wallet, driver)
+
+	got, err := svc.CreateOrder(context.Background(), validInput())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got.Status != service_dto.StatusDriverAssigned {
+		t.Fatalf("got status %q, want driver_assigned", got.Status)
+	}
+	if driver.claimArg != string(service_dto.TaxiTypeComfort) {
+		t.Fatalf("got claim taxi type %q, want comfort", driver.claimArg)
+	}
+	if !repo.assignDriverCalled || repo.assignDriverArg != "driver-1" {
+		t.Fatalf("expected repo.AssignDriver to be called with driver-1, got called=%v arg=%q", repo.assignDriverCalled, repo.assignDriverArg)
+	}
+	if gw.calledWith.Status != service_dto.StatusDriverAssigned {
+		t.Fatalf("expected the published event to carry the assigned status, got %+v", gw.calledWith)
+	}
+}
+
+func TestCreateOrder_NoDriverAvailable(t *testing.T) {
+	created := service_dto.Order{ID: "order-1", UserID: "user-1", Status: service_dto.StatusCreated}
+	repo := &fakeOrderRepository{order: &created}
+	gw := &fakeOrderGateway{}
+	wallet := &fakeWalletGateway{}
+	driver := &fakeDriverGateway{claimOK: false}
+	svc := NewOrderService(repo, gw, wallet, driver)
+
+	got, err := svc.CreateOrder(context.Background(), validInput())
+	if err != nil {
+		t.Fatalf("expected no error when no driver is available, got %v", err)
+	}
+	if got.Status != service_dto.StatusCreated {
+		t.Fatalf("got status %q, want created (unassigned)", got.Status)
+	}
+	if repo.assignDriverCalled {
+		t.Fatal("AssignDriver must not be called when no driver was claimed")
+	}
+}
+
+func TestCreateOrder_ClaimErrorDoesNotFailCreateOrder(t *testing.T) {
+	created := service_dto.Order{ID: "order-1", UserID: "user-1", Status: service_dto.StatusCreated}
+	repo := &fakeOrderRepository{order: &created}
+	gw := &fakeOrderGateway{}
+	wallet := &fakeWalletGateway{}
+	driver := &fakeDriverGateway{claimErr: errors.New("driver service unreachable")}
+	svc := NewOrderService(repo, gw, wallet, driver)
+
+	got, err := svc.CreateOrder(context.Background(), validInput())
+	if err != nil {
+		t.Fatalf("expected CreateOrder to succeed despite a claim error, got %v", err)
+	}
+	if got.Status != service_dto.StatusCreated {
+		t.Fatalf("got status %q, want created (unassigned)", got.Status)
+	}
+}
+
+func TestCreateOrder_ReleasesDriverWhenAssignmentFails(t *testing.T) {
+	created := service_dto.Order{ID: "order-1", UserID: "user-1", Status: service_dto.StatusCreated}
+	repo := &fakeOrderRepository{order: &created, assignDriverErr: errors.New("db down")}
+	gw := &fakeOrderGateway{}
+	wallet := &fakeWalletGateway{}
+	driver := &fakeDriverGateway{claimUserID: "driver-1", claimOK: true}
+	svc := NewOrderService(repo, gw, wallet, driver)
+
+	got, err := svc.CreateOrder(context.Background(), validInput())
+	if err != nil {
+		t.Fatalf("expected CreateOrder to succeed despite a failed assignment, got %v", err)
+	}
+	if got.Status != service_dto.StatusCreated {
+		t.Fatalf("got status %q, want created (unassigned)", got.Status)
+	}
+	if !driver.releaseCalled || driver.releaseArg != "driver-1" {
+		t.Fatalf("expected the claimed driver to be released, got called=%v arg=%q", driver.releaseCalled, driver.releaseArg)
 	}
 }

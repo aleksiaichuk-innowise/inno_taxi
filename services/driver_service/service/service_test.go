@@ -46,6 +46,13 @@ func (f *fakeDriverRepository) UpdateTaxiTypeByUserID(_ context.Context, userID,
 	return f.err
 }
 
+func (f *fakeDriverRepository) ClaimAvailableDriver(_ context.Context, _ string) (service_dto.Driver, error) {
+	if f.err != nil {
+		return service_dto.Driver{}, f.err
+	}
+	return service_dto.Driver{}, errorsx.ErrNoAvailableDriver
+}
+
 func (f *fakeDriverRepository) FindByStatus(_ context.Context, _ service_dto.Status) ([]service_dto.Driver, error) {
 	if f.err != nil {
 		return nil, f.err

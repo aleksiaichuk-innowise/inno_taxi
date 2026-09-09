@@ -110,6 +110,8 @@ func Run(cfg *config.Config) error {
 func registerRoutes(r *gin.Engine, h *http_handler.Handler, jwtSecret string) {
 	r.POST("/internal/drivers", h.Register)
 	r.GET("/internal/drivers", h.GetDrivers)
+	r.POST("/internal/drivers/claim", h.ClaimDriver)
+	r.PATCH("/internal/drivers/:user_id/status", h.UpdateStatusInternal)
 
 	profile := r.Group("/profile")
 	profile.Use(middleware.Auth(jwtSecret))

@@ -36,6 +36,10 @@ func (f *fakeDriverRepository) UpdateStatusByUserID(context.Context, string, str
 func (f *fakeDriverRepository) UpdateTaxiTypeByUserID(context.Context, string, string) error {
 	return nil
 }
+func (f *fakeDriverRepository) ClaimAvailableDriver(context.Context, string) (input.Driver, error) {
+	return input.Driver{}, errorsx.ErrNoAvailableDriver
+}
+
 func (f *fakeDriverRepository) FindByStatus(context.Context, input.Status) ([]input.Driver, error) {
 	return nil, nil
 }

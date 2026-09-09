@@ -12,6 +12,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/v2/bson"
 	drivermongo "go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 const DRIVER_COLLECTION = "drivers"
@@ -101,8 +102,37 @@ func (r DriverRepository) UpdateTaxiTypeByUserID(ctx context.Context, userID, st
 	return nil
 }
 
+// ClaimAvailableDriver atomically finds one available driver of the given
+// taxi type and flips them to on-trip. FindOneAndUpdate is atomic at the
+// single-document level (no multi-document transaction needed), which is
+// exactly the guarantee two concurrent CreateOrder calls need to never
+// claim the same driver twice.
+func (r DriverRepository) ClaimAvailableDriver(ctx context.Context, taxiType string) (service_dto.Driver, error) {
+	filter := bson.M{"taxi_type": taxiType, "status": string(service_dto.StatusAvailable)}
+	update := bson.M{"$set": bson.M{"status": string(service_dto.StatusOnTrip), "updated_at": time.Now()}}
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+
+	res := r.client.Database.Collection(DRIVER_COLLECTION).FindOneAndUpdate(ctx, filter, update, opts)
+
+	var doc repository.Driver
+	if err := res.Decode(&doc); err != nil {
+		if errors.Is(err, drivermongo.ErrNoDocuments) {
+			return service_dto.Driver{}, errorsx.ErrNoAvailableDriver
+		}
+		return service_dto.Driver{}, err
+	}
+	return service_dto.Driver{
+		ID:        doc.ID.Hex(),
+		UserID:    doc.UserID,
+		TaxiType:  service_dto.TaxiType(doc.TaxiType),
+		Status:    service_dto.Status(doc.Status),
+		CreatedAt: doc.CreatedAt,
+		UpdatedAt: doc.UpdatedAt,
+	}, nil
+}
+
 func (r *DriverRepository) FindByStatus(ctx context.Context, status service_dto.Status) ([]service_dto.Driver, error) {
-	filter := bson.M{}
+	filter := bson.M{"status": string(status)}
 
 	cursor, err := r.client.Database.Collection(DRIVER_COLLECTION).Find(ctx, filter)
 	if err != nil {

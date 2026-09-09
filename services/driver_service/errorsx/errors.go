@@ -7,4 +7,5 @@ var (
 	ErrDriverAlreadyExists = errors.New("driver already exists")
 	ErrInvalidTaxiType     = errors.New("invalid taxi type")
 	ErrInvalidStatus       = errors.New("invalid status")
+	ErrNoAvailableDriver   = errors.New("no available driver")
 )

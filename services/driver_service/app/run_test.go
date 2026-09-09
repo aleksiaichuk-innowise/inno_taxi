@@ -9,6 +9,7 @@ import (
 	"time"
 
 	service_dto "github.com/aleksiaichuk-innowise/inno_taxi/services/driver_service/entity/service"
+	"github.com/aleksiaichuk-innowise/inno_taxi/services/driver_service/errorsx"
 	http_handler "github.com/aleksiaichuk-innowise/inno_taxi/services/driver_service/handler/http"
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/driver_service/service"
 	"github.com/gin-gonic/gin"
@@ -38,6 +39,10 @@ func (f *fakeDriverRepository) UpdateStatusByUserID(_ context.Context, _, _ stri
 
 func (f *fakeDriverRepository) UpdateTaxiTypeByUserID(_ context.Context, _, _ string) error {
 	return nil
+}
+
+func (f *fakeDriverRepository) ClaimAvailableDriver(_ context.Context, _ string) (service_dto.Driver, error) {
+	return service_dto.Driver{}, errorsx.ErrNoAvailableDriver
 }
 
 func (f *fakeDriverRepository) FindByStatus(_ context.Context, _ service_dto.Status) ([]service_dto.Driver, error) {

@@ -12,6 +12,7 @@ type DriverRepository interface {
 	UpdateStatusByUserID(ctx context.Context, userID, status string) error
 	UpdateTaxiTypeByUserID(ctx context.Context, userID, status string) error
 	FindByStatus(ctx context.Context, status service_dto.Status) ([]service_dto.Driver, error)
+	ClaimAvailableDriver(ctx context.Context, taxiType string) (service_dto.Driver, error)
 }
 
 type DriverService struct {

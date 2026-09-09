@@ -44,6 +44,8 @@ func (s OrderService) CreateOrder(ctx context.Context, input service_dto.CreateO
 		return service_dto.Order{}, err
 	}
 
+	order = s.tryAssignDriver(ctx, order)
+
 	// Publish is best-effort and post-commit: a failure here must not undo or
 	// fail an already-persisted order (ARCHITECTURE.md Cons #6 — no outbox/
 	// idempotency guarantee yet, acceptable until a real Kafka consumer exists).
@@ -52,4 +54,31 @@ func (s OrderService) CreateOrder(ctx context.Context, input service_dto.CreateO
 	}
 
 	return order, nil
+}
+
+// tryAssignDriver attempts to claim and assign a driver for a just-created
+// order. Best-effort throughout: no driver being available right now is a
+// normal outcome, not a reason to fail an order that's already been
+// correctly charged - see the design doc's "order_service wiring" section.
+// On any failure it returns the order unchanged (still created, unassigned).
+func (s OrderService) tryAssignDriver(ctx context.Context, order service_dto.Order) service_dto.Order {
+	driverID, ok, err := s.driver.ClaimAvailableDriver(ctx, string(order.TaxiType))
+	if err != nil {
+		slog.ErrorContext(ctx, "claim available driver failed", "order_id", order.ID, "error", err)
+		return order
+	}
+	if !ok {
+		return order
+	}
+
+	assigned, err := s.repo.AssignDriver(ctx, order.ID, driverID)
+	if err != nil {
+		slog.ErrorContext(ctx, "assign driver to order failed", "order_id", order.ID, "driver_id", driverID, "error", err)
+		if releaseErr := s.driver.ReleaseDriver(ctx, driverID); releaseErr != nil {
+			slog.ErrorContext(ctx, "release driver after failed assignment failed", "order_id", order.ID, "driver_id", driverID, "error", releaseErr)
+		}
+		return order
+	}
+
+	return assigned
 }

@@ -16,6 +16,7 @@ import (
 	app_kafka "github.com/aleksiaichuk-innowise/inno_taxi/services/order_service/app/kafka"
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/order_service/config"
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/order_service/gateway"
+	driver_gateway "github.com/aleksiaichuk-innowise/inno_taxi/services/order_service/gateway/driver_service"
 	wallet_gateway "github.com/aleksiaichuk-innowise/inno_taxi/services/order_service/gateway/wallet_service"
 	grpc_srv "github.com/aleksiaichuk-innowise/inno_taxi/services/order_service/handler/grpc"
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/order_service/repository/pg_repo"
@@ -58,12 +59,13 @@ func Run(cfg *config.Config) error {
 	}()
 	kafkaGateway := gateway.NewKafkaGateway(kafkaProducer)
 	walletGateway := wallet_gateway.NewWalletGateway(cfg.WalletService.BaseURL, nil)
+	driverGateway := driver_gateway.NewDriverGateway(cfg.DriverService.BaseURL, nil)
 
 	// -- repo
 	repo := pg_repo.NewPgRepo(dbConn)
 
 	// services
-	orderService := service.NewOrderService(repo, kafkaGateway, walletGateway)
+	orderService := service.NewOrderService(repo, kafkaGateway, walletGateway, driverGateway)
 
 	// -- Grpc
 

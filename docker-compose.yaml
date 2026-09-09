@@ -227,6 +227,7 @@ services:
       KAFKA_BROKERS: kafka:9092
       JWT_SECRET: ${JWT_SECRET:-taxi}
       WALLET_SERVICE_BASE_URL: http://wallet_service:8084
+      DRIVER_SERVICE_BASE_URL: http://driver_service:8081
     ports:
       # Host 8086, not 8080: user_service already owns 8080 on the host
       # (container itself still listens on 8080 - gateway_service's
@@ -242,6 +243,8 @@ services:
       kafka:
         condition: service_healthy
       wallet_service:
+        condition: service_started
+      driver_service:
         condition: service_started
   kafka:
     image: apache/kafka:3.9.0

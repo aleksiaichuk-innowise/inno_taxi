@@ -10,6 +10,7 @@ type OrderRepository interface {
 	CreateOrder(ctx context.Context, id string, priceMinorUnits int64, input service_dto.CreateOrderInput) (service_dto.Order, error)
 	GetOrderByID(ctx context.Context, id string) (service_dto.Order, error)
 	UpdateOrderStatus(ctx context.Context, id string, status service_dto.Status) (service_dto.Order, error)
+	AssignDriver(ctx context.Context, id, driverID string) (service_dto.Order, error)
 }
 
 type OrderGateway interface {
@@ -25,12 +26,22 @@ type WalletGateway interface {
 	Refund(ctx context.Context, userID string, amountMinorUnits int64, referenceID string) error
 }
 
+// DriverGateway is best-effort, unlike WalletGateway: "no driver available"
+// (or driver_service being briefly unreachable) is not a reason to fail an
+// order that's already been correctly charged - see the driver-assignment
+// design doc.
+type DriverGateway interface {
+	ClaimAvailableDriver(ctx context.Context, taxiType string) (userID string, ok bool, err error)
+	ReleaseDriver(ctx context.Context, userID string) error
+}
+
 type OrderService struct {
 	repo    OrderRepository
 	gateway OrderGateway
 	wallet  WalletGateway
+	driver  DriverGateway
 }
 
-func NewOrderService(repo OrderRepository, gateway OrderGateway, wallet WalletGateway) OrderService {
-	return OrderService{repo: repo, gateway: gateway, wallet: wallet}
+func NewOrderService(repo OrderRepository, gateway OrderGateway, wallet WalletGateway, driver DriverGateway) OrderService {
+	return OrderService{repo: repo, gateway: gateway, wallet: wallet, driver: driver}
 }

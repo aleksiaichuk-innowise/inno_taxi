@@ -5,9 +5,9 @@ import (
 	"errors"
 	"testing"
 
-	service_dto "github.com/aleksiaichuk-innowise/inno_taxi/services/order_service/entity/service"
 	"github.com/IBM/sarama"
 	"github.com/IBM/sarama/mocks"
+	service_dto "github.com/aleksiaichuk-innowise/inno_taxi/services/order_service/entity/service"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/aleksiaichuk-innowise/inno_taxi/shared/proto/order_service"

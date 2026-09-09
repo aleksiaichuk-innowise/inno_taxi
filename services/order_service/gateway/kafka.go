@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	service_dto "github.com/aleksiaichuk-innowise/inno_taxi/services/order_service/entity/service"
 	"github.com/IBM/sarama"
+	service_dto "github.com/aleksiaichuk-innowise/inno_taxi/services/order_service/entity/service"
 	"google.golang.org/protobuf/proto"
 )
 

@@ -920,6 +920,158 @@ func (x *ListOrdersResponse) GetTotal() int64 {
 	return 0
 }
 
+type SearchOrdersRequest struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	TaxiType           TaxiType               `protobuf:"varint,1,opt,name=taxi_type,json=taxiType,proto3,enum=order.v1.TaxiType" json:"taxi_type,omitempty"`
+	Status             Status                 `protobuf:"varint,2,opt,name=status,proto3,enum=order.v1.Status" json:"status,omitempty"`
+	CreatedAfter       string                 `protobuf:"bytes,3,opt,name=created_after,json=createdAfter,proto3" json:"created_after,omitempty"`
+	CreatedBefore      string                 `protobuf:"bytes,4,opt,name=created_before,json=createdBefore,proto3" json:"created_before,omitempty"`
+	MinPriceMinorUnits int64                  `protobuf:"varint,5,opt,name=min_price_minor_units,json=minPriceMinorUnits,proto3" json:"min_price_minor_units,omitempty"`
+	MaxPriceMinorUnits int64                  `protobuf:"varint,6,opt,name=max_price_minor_units,json=maxPriceMinorUnits,proto3" json:"max_price_minor_units,omitempty"`
+	Limit              int32                  `protobuf:"varint,7,opt,name=limit,proto3" json:"limit,omitempty"`
+	Offset             int32                  `protobuf:"varint,8,opt,name=offset,proto3" json:"offset,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *SearchOrdersRequest) Reset() {
+	*x = SearchOrdersRequest{}
+	mi := &file_shared_proto_order_service_order_service_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SearchOrdersRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SearchOrdersRequest) ProtoMessage() {}
+
+func (x *SearchOrdersRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_shared_proto_order_service_order_service_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SearchOrdersRequest.ProtoReflect.Descriptor instead.
+func (*SearchOrdersRequest) Descriptor() ([]byte, []int) {
+	return file_shared_proto_order_service_order_service_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *SearchOrdersRequest) GetTaxiType() TaxiType {
+	if x != nil {
+		return x.TaxiType
+	}
+	return TaxiType_TAXI_TYPE_UNSPECIFIED
+}
+
+func (x *SearchOrdersRequest) GetStatus() Status {
+	if x != nil {
+		return x.Status
+	}
+	return Status_STATUS_UNSPECIFIED
+}
+
+func (x *SearchOrdersRequest) GetCreatedAfter() string {
+	if x != nil {
+		return x.CreatedAfter
+	}
+	return ""
+}
+
+func (x *SearchOrdersRequest) GetCreatedBefore() string {
+	if x != nil {
+		return x.CreatedBefore
+	}
+	return ""
+}
+
+func (x *SearchOrdersRequest) GetMinPriceMinorUnits() int64 {
+	if x != nil {
+		return x.MinPriceMinorUnits
+	}
+	return 0
+}
+
+func (x *SearchOrdersRequest) GetMaxPriceMinorUnits() int64 {
+	if x != nil {
+		return x.MaxPriceMinorUnits
+	}
+	return 0
+}
+
+func (x *SearchOrdersRequest) GetLimit() int32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+func (x *SearchOrdersRequest) GetOffset() int32 {
+	if x != nil {
+		return x.Offset
+	}
+	return 0
+}
+
+type SearchOrdersResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Orders        []*Order               `protobuf:"bytes,1,rep,name=orders,proto3" json:"orders,omitempty"`
+	Total         int64                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SearchOrdersResponse) Reset() {
+	*x = SearchOrdersResponse{}
+	mi := &file_shared_proto_order_service_order_service_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SearchOrdersResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SearchOrdersResponse) ProtoMessage() {}
+
+func (x *SearchOrdersResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_shared_proto_order_service_order_service_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SearchOrdersResponse.ProtoReflect.Descriptor instead.
+func (*SearchOrdersResponse) Descriptor() ([]byte, []int) {
+	return file_shared_proto_order_service_order_service_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *SearchOrdersResponse) GetOrders() []*Order {
+	if x != nil {
+		return x.Orders
+	}
+	return nil
+}
+
+func (x *SearchOrdersResponse) GetTotal() int64 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
 type Location struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Lat           float64                `protobuf:"fixed64,1,opt,name=lat,proto3" json:"lat,omitempty"`
@@ -930,7 +1082,7 @@ type Location struct {
 
 func (x *Location) Reset() {
 	*x = Location{}
-	mi := &file_shared_proto_order_service_order_service_proto_msgTypes[15]
+	mi := &file_shared_proto_order_service_order_service_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -942,7 +1094,7 @@ func (x *Location) String() string {
 func (*Location) ProtoMessage() {}
 
 func (x *Location) ProtoReflect() protoreflect.Message {
-	mi := &file_shared_proto_order_service_order_service_proto_msgTypes[15]
+	mi := &file_shared_proto_order_service_order_service_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -955,7 +1107,7 @@ func (x *Location) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Location.ProtoReflect.Descriptor instead.
 func (*Location) Descriptor() ([]byte, []int) {
-	return file_shared_proto_order_service_order_service_proto_rawDescGZIP(), []int{15}
+	return file_shared_proto_order_service_order_service_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *Location) GetLat() float64 {
@@ -1024,6 +1176,18 @@ const file_shared_proto_order_service_order_service_proto_rawDesc = "" +
 	"\x06offset\x18\x02 \x01(\x05R\x06offset\"S\n" +
 	"\x12ListOrdersResponse\x12'\n" +
 	"\x06orders\x18\x01 \x03(\v2\x0f.order.v1.OrderR\x06orders\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total\"\xd0\x02\n" +
+	"\x13SearchOrdersRequest\x12/\n" +
+	"\ttaxi_type\x18\x01 \x01(\x0e2\x12.order.v1.TaxiTypeR\btaxiType\x12(\n" +
+	"\x06status\x18\x02 \x01(\x0e2\x10.order.v1.StatusR\x06status\x12#\n" +
+	"\rcreated_after\x18\x03 \x01(\tR\fcreatedAfter\x12%\n" +
+	"\x0ecreated_before\x18\x04 \x01(\tR\rcreatedBefore\x121\n" +
+	"\x15min_price_minor_units\x18\x05 \x01(\x03R\x12minPriceMinorUnits\x121\n" +
+	"\x15max_price_minor_units\x18\x06 \x01(\x03R\x12maxPriceMinorUnits\x12\x14\n" +
+	"\x05limit\x18\a \x01(\x05R\x05limit\x12\x16\n" +
+	"\x06offset\x18\b \x01(\x05R\x06offset\"U\n" +
+	"\x14SearchOrdersResponse\x12'\n" +
+	"\x06orders\x18\x01 \x03(\v2\x0f.order.v1.OrderR\x06orders\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x03R\x05total\"0\n" +
 	"\bLocation\x12\x10\n" +
 	"\x03lat\x18\x01 \x01(\x01R\x03lat\x12\x12\n" +
@@ -1039,7 +1203,7 @@ const file_shared_proto_order_service_order_service_proto_rawDesc = "" +
 	"\x16STATUS_DRIVER_ASSIGNED\x10\x02\x12\x16\n" +
 	"\x12STATUS_IN_PROGRESS\x10\x03\x12\x14\n" +
 	"\x10STATUS_COMPLETED\x10\x04\x12\x14\n" +
-	"\x10STATUS_CANCELLED\x10\x052\xee\x05\n" +
+	"\x10STATUS_CANCELLED\x10\x052\xd8\x06\n" +
 	"\fOrderService\x12a\n" +
 	"\vCreateOrder\x12\x1c.order.v1.CreateOrderRequest\x1a\x1d.order.v1.CreateOrderResponse\"\x15\x82\xd3\xe4\x93\x02\x0f:\x01*\"\n" +
 	"/v1/orders\x12p\n" +
@@ -1050,7 +1214,8 @@ const file_shared_proto_order_service_order_service_proto_rawDesc = "" +
 	"\bGetOrder\x12\x19.order.v1.GetOrderRequest\x1a\x1a.order.v1.GetOrderResponse\"\x1d\x82\xd3\xe4\x93\x02\x17\x12\x15/v1/orders/{order_id}\x12[\n" +
 	"\n" +
 	"ListOrders\x12\x1b.order.v1.ListOrdersRequest\x1a\x1c.order.v1.ListOrdersResponse\"\x12\x82\xd3\xe4\x93\x02\f\x12\n" +
-	"/v1/ordersBUZSgithub.com/aleksiaichuk-innowise/inno_taxi/shared/proto/order_service;order_serviceb\x06proto3"
+	"/v1/orders\x12h\n" +
+	"\fSearchOrders\x12\x1d.order.v1.SearchOrdersRequest\x1a\x1e.order.v1.SearchOrdersResponse\"\x19\x82\xd3\xe4\x93\x02\x13\x12\x11/v1/orders/searchBUZSgithub.com/aleksiaichuk-innowise/inno_taxi/shared/proto/order_service;order_serviceb\x06proto3"
 
 var (
 	file_shared_proto_order_service_order_service_proto_rawDescOnce sync.Once
@@ -1065,7 +1230,7 @@ func file_shared_proto_order_service_order_service_proto_rawDescGZIP() []byte {
 }
 
 var file_shared_proto_order_service_order_service_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_shared_proto_order_service_order_service_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
+var file_shared_proto_order_service_order_service_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_shared_proto_order_service_order_service_proto_goTypes = []any{
 	(TaxiType)(0),                // 0: order.v1.TaxiType
 	(Status)(0),                  // 1: order.v1.Status
@@ -1084,15 +1249,17 @@ var file_shared_proto_order_service_order_service_proto_goTypes = []any{
 	(*GetOrderResponse)(nil),     // 14: order.v1.GetOrderResponse
 	(*ListOrdersRequest)(nil),    // 15: order.v1.ListOrdersRequest
 	(*ListOrdersResponse)(nil),   // 16: order.v1.ListOrdersResponse
-	(*Location)(nil),             // 17: order.v1.Location
+	(*SearchOrdersRequest)(nil),  // 17: order.v1.SearchOrdersRequest
+	(*SearchOrdersResponse)(nil), // 18: order.v1.SearchOrdersResponse
+	(*Location)(nil),             // 19: order.v1.Location
 }
 var file_shared_proto_order_service_order_service_proto_depIdxs = []int32{
 	0,  // 0: order.v1.CreateOrderRequest.taxi_type:type_name -> order.v1.TaxiType
-	17, // 1: order.v1.CreateOrderRequest.start:type_name -> order.v1.Location
-	17, // 2: order.v1.CreateOrderRequest.destination:type_name -> order.v1.Location
+	19, // 1: order.v1.CreateOrderRequest.start:type_name -> order.v1.Location
+	19, // 2: order.v1.CreateOrderRequest.destination:type_name -> order.v1.Location
 	0,  // 3: order.v1.Order.taxi_type:type_name -> order.v1.TaxiType
-	17, // 4: order.v1.Order.start:type_name -> order.v1.Location
-	17, // 5: order.v1.Order.destination:type_name -> order.v1.Location
+	19, // 4: order.v1.Order.start:type_name -> order.v1.Location
+	19, // 5: order.v1.Order.destination:type_name -> order.v1.Location
 	1,  // 6: order.v1.Order.status:type_name -> order.v1.Status
 	3,  // 7: order.v1.CreateOrderResponse.order:type_name -> order.v1.Order
 	3,  // 8: order.v1.CancelOrderResponse.order:type_name -> order.v1.Order
@@ -1101,25 +1268,30 @@ var file_shared_proto_order_service_order_service_proto_depIdxs = []int32{
 	3,  // 11: order.v1.RateTripResponse.order:type_name -> order.v1.Order
 	3,  // 12: order.v1.GetOrderResponse.order:type_name -> order.v1.Order
 	3,  // 13: order.v1.ListOrdersResponse.orders:type_name -> order.v1.Order
-	2,  // 14: order.v1.OrderService.CreateOrder:input_type -> order.v1.CreateOrderRequest
-	5,  // 15: order.v1.OrderService.CancelOrder:input_type -> order.v1.CancelOrderRequest
-	7,  // 16: order.v1.OrderService.StartTrip:input_type -> order.v1.StartTripRequest
-	9,  // 17: order.v1.OrderService.CompleteTrip:input_type -> order.v1.CompleteTripRequest
-	11, // 18: order.v1.OrderService.RateTrip:input_type -> order.v1.RateTripRequest
-	13, // 19: order.v1.OrderService.GetOrder:input_type -> order.v1.GetOrderRequest
-	15, // 20: order.v1.OrderService.ListOrders:input_type -> order.v1.ListOrdersRequest
-	4,  // 21: order.v1.OrderService.CreateOrder:output_type -> order.v1.CreateOrderResponse
-	6,  // 22: order.v1.OrderService.CancelOrder:output_type -> order.v1.CancelOrderResponse
-	8,  // 23: order.v1.OrderService.StartTrip:output_type -> order.v1.StartTripResponse
-	10, // 24: order.v1.OrderService.CompleteTrip:output_type -> order.v1.CompleteTripResponse
-	12, // 25: order.v1.OrderService.RateTrip:output_type -> order.v1.RateTripResponse
-	14, // 26: order.v1.OrderService.GetOrder:output_type -> order.v1.GetOrderResponse
-	16, // 27: order.v1.OrderService.ListOrders:output_type -> order.v1.ListOrdersResponse
-	21, // [21:28] is the sub-list for method output_type
-	14, // [14:21] is the sub-list for method input_type
-	14, // [14:14] is the sub-list for extension type_name
-	14, // [14:14] is the sub-list for extension extendee
-	0,  // [0:14] is the sub-list for field type_name
+	0,  // 14: order.v1.SearchOrdersRequest.taxi_type:type_name -> order.v1.TaxiType
+	1,  // 15: order.v1.SearchOrdersRequest.status:type_name -> order.v1.Status
+	3,  // 16: order.v1.SearchOrdersResponse.orders:type_name -> order.v1.Order
+	2,  // 17: order.v1.OrderService.CreateOrder:input_type -> order.v1.CreateOrderRequest
+	5,  // 18: order.v1.OrderService.CancelOrder:input_type -> order.v1.CancelOrderRequest
+	7,  // 19: order.v1.OrderService.StartTrip:input_type -> order.v1.StartTripRequest
+	9,  // 20: order.v1.OrderService.CompleteTrip:input_type -> order.v1.CompleteTripRequest
+	11, // 21: order.v1.OrderService.RateTrip:input_type -> order.v1.RateTripRequest
+	13, // 22: order.v1.OrderService.GetOrder:input_type -> order.v1.GetOrderRequest
+	15, // 23: order.v1.OrderService.ListOrders:input_type -> order.v1.ListOrdersRequest
+	17, // 24: order.v1.OrderService.SearchOrders:input_type -> order.v1.SearchOrdersRequest
+	4,  // 25: order.v1.OrderService.CreateOrder:output_type -> order.v1.CreateOrderResponse
+	6,  // 26: order.v1.OrderService.CancelOrder:output_type -> order.v1.CancelOrderResponse
+	8,  // 27: order.v1.OrderService.StartTrip:output_type -> order.v1.StartTripResponse
+	10, // 28: order.v1.OrderService.CompleteTrip:output_type -> order.v1.CompleteTripResponse
+	12, // 29: order.v1.OrderService.RateTrip:output_type -> order.v1.RateTripResponse
+	14, // 30: order.v1.OrderService.GetOrder:output_type -> order.v1.GetOrderResponse
+	16, // 31: order.v1.OrderService.ListOrders:output_type -> order.v1.ListOrdersResponse
+	18, // 32: order.v1.OrderService.SearchOrders:output_type -> order.v1.SearchOrdersResponse
+	25, // [25:33] is the sub-list for method output_type
+	17, // [17:25] is the sub-list for method input_type
+	17, // [17:17] is the sub-list for extension type_name
+	17, // [17:17] is the sub-list for extension extendee
+	0,  // [0:17] is the sub-list for field type_name
 }
 
 func init() { file_shared_proto_order_service_order_service_proto_init() }
@@ -1133,7 +1305,7 @@ func file_shared_proto_order_service_order_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_shared_proto_order_service_order_service_proto_rawDesc), len(file_shared_proto_order_service_order_service_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   16,
+			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

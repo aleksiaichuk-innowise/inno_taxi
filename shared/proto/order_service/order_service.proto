@@ -97,6 +97,22 @@ message ListOrdersResponse {
   int64 total = 2;
 }
 
+message SearchOrdersRequest {
+  TaxiType taxi_type = 1;
+  Status status = 2;
+  string created_after = 3;
+  string created_before = 4;
+  int64 min_price_minor_units = 5;
+  int64 max_price_minor_units = 6;
+  int32 limit = 7;
+  int32 offset = 8;
+}
+
+message SearchOrdersResponse {
+  repeated Order orders = 1;
+  int64 total = 2;
+}
+
 message Location {
   double lat = 1;
   double long =2;
@@ -145,6 +161,12 @@ service OrderService {
   rpc ListOrders(ListOrdersRequest) returns (ListOrdersResponse) {
     option (google.api.http) = {
       get: "/v1/orders"
+    };
+  }
+
+  rpc SearchOrders(SearchOrdersRequest) returns (SearchOrdersResponse) {
+    option (google.api.http) = {
+      get: "/v1/orders/search"
     };
   }
 }

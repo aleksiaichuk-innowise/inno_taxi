@@ -84,6 +84,98 @@
         ]
       }
     },
+    "/v1/orders/search": {
+      "get": {
+        "operationId": "OrderService_SearchOrders",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1SearchOrdersResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googleRpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "taxiType",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "TAXI_TYPE_UNSPECIFIED",
+              "TAXI_TYPE_ECONOMY",
+              "TAXI_TYPE_COMFORT",
+              "TAXI_TYPE_BUSINESS"
+            ],
+            "default": "TAXI_TYPE_UNSPECIFIED"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "STATUS_UNSPECIFIED",
+              "STATUS_CREATED",
+              "STATUS_DRIVER_ASSIGNED",
+              "STATUS_IN_PROGRESS",
+              "STATUS_COMPLETED",
+              "STATUS_CANCELLED"
+            ],
+            "default": "STATUS_UNSPECIFIED"
+          },
+          {
+            "name": "createdAfter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "createdBefore",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "minPriceMinorUnits",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "maxPriceMinorUnits",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "OrderService"
+        ]
+      }
+    },
     "/v1/orders/{orderId}": {
       "get": {
         "operationId": "OrderService_GetOrder",
@@ -416,6 +508,22 @@
       "properties": {
         "order": {
           "$ref": "#/definitions/v1Order"
+        }
+      }
+    },
+    "v1SearchOrdersResponse": {
+      "type": "object",
+      "properties": {
+        "orders": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Order"
+          }
+        },
+        "total": {
+          "type": "string",
+          "format": "int64"
         }
       }
     },

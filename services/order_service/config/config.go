@@ -11,6 +11,7 @@ import (
 type Config struct {
 	DbConn        shared.PostgresConfig
 	EsConn        shared.ElasticsearchConfig
+	EsIndex       string
 	KafkaConf     shared.KafkaConfig
 	Grpc          *shared.GrpcServerConfig
 	HttpHost      shared.HttpHostConfig
@@ -54,6 +55,7 @@ func Load() *Config {
 			MaxIdleConnsPerHost: 20,
 			Timeout:             10 * time.Second,
 		},
+		EsIndex: shared.GetEnvFallback("ES_ORDER_INDEX", "orders"),
 		KafkaConf: shared.KafkaConfig{
 			Brokers:  strings.Split(shared.GetEnvFallback("KAFKA_BROKERS", "localhost:9092"), ","),
 			Username: shared.GetEnvFallback("KAFKA_USERNAME", ""),

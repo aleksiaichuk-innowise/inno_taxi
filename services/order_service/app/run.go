@@ -16,6 +16,7 @@ import (
 	app_kafka "github.com/aleksiaichuk-innowise/inno_taxi/services/order_service/app/kafka"
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/order_service/config"
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/order_service/gateway"
+	"github.com/aleksiaichuk-innowise/inno_taxi/services/order_service/repository/es_repo"
 	driver_gateway "github.com/aleksiaichuk-innowise/inno_taxi/services/order_service/gateway/driver_service"
 	wallet_gateway "github.com/aleksiaichuk-innowise/inno_taxi/services/order_service/gateway/wallet_service"
 	grpc_srv "github.com/aleksiaichuk-innowise/inno_taxi/services/order_service/handler/grpc"
@@ -44,6 +45,11 @@ func Run(cfg *config.Config) error {
 	}
 	defer es.Close(ctx)
 
+	if err := es_repo.EnsureIndex(ctx, es, cfg.EsIndex); err != nil {
+		return fmt.Errorf("ensure elasticsearch index: %w", err)
+	}
+	search := es_repo.NewEsRepo(es, cfg.EsIndex)
+
 	slog.Info("order service starting")
 
 	// -- kafka
@@ -65,7 +71,7 @@ func Run(cfg *config.Config) error {
 	repo := pg_repo.NewPgRepo(dbConn)
 
 	// services
-	orderService := service.NewOrderService(repo, kafkaGateway, walletGateway, driverGateway, nil)
+	orderService := service.NewOrderService(repo, kafkaGateway, walletGateway, driverGateway, search)
 
 	// -- Grpc
 

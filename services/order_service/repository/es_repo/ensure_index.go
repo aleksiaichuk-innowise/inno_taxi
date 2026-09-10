@@ -3,6 +3,7 @@ package es_repo
 import (
 	"context"
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/elastic/go-elasticsearch/v8"
@@ -21,7 +22,11 @@ func EnsureIndex(ctx context.Context, client *elasticsearch.Client, index string
 		return nil
 	}
 	if existsRes.StatusCode != 404 {
-		return fmt.Errorf("check index exists returned unexpected status %d", existsRes.StatusCode)
+		body, readErr := io.ReadAll(existsRes.Body)
+		if readErr != nil {
+			return fmt.Errorf("check index exists returned unexpected status %d", existsRes.StatusCode)
+		}
+		return fmt.Errorf("check index exists returned unexpected status %d: %s", existsRes.StatusCode, body)
 	}
 
 	createRes, err := client.Indices.Create(index,
@@ -34,7 +39,11 @@ func EnsureIndex(ctx context.Context, client *elasticsearch.Client, index string
 	defer createRes.Body.Close()
 
 	if createRes.IsError() {
-		return fmt.Errorf("create index returned unexpected status %d", createRes.StatusCode)
+		body, readErr := io.ReadAll(createRes.Body)
+		if readErr != nil {
+			return fmt.Errorf("create index returned unexpected status %d", createRes.StatusCode)
+		}
+		return fmt.Errorf("create index returned unexpected status %d: %s", createRes.StatusCode, body)
 	}
 	return nil
 }

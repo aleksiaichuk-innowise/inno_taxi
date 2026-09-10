@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"time"
 
 	repo_entity "github.com/aleksiaichuk-innowise/inno_taxi/services/order_service/entity/repository"
@@ -86,7 +87,11 @@ func (r EsRepository) SearchOrders(ctx context.Context, filter service_dto.Order
 	defer res.Body.Close()
 
 	if res.IsError() {
-		return nil, 0, fmt.Errorf("search orders returned unexpected status %d", res.StatusCode)
+		body, readErr := io.ReadAll(res.Body)
+		if readErr != nil {
+			return nil, 0, fmt.Errorf("search orders returned unexpected status %d", res.StatusCode)
+		}
+		return nil, 0, fmt.Errorf("search orders returned unexpected status %d: %s", res.StatusCode, body)
 	}
 
 	var parsed searchResponseBody

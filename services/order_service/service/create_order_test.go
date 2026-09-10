@@ -333,7 +333,8 @@ func TestCreateOrder_AssignsDriverWhenAvailable(t *testing.T) {
 	gw := &fakeOrderGateway{}
 	wallet := &fakeWalletGateway{}
 	driver := &fakeDriverGateway{claimUserID: "driver-1", claimOK: true}
-	svc := NewOrderService(repo, gw, wallet, driver, &fakeSearchRepository{})
+	search := &fakeSearchRepository{}
+	svc := NewOrderService(repo, gw, wallet, driver, search)
 
 	got, err := svc.CreateOrder(context.Background(), validInput())
 	if err != nil {
@@ -350,6 +351,9 @@ func TestCreateOrder_AssignsDriverWhenAvailable(t *testing.T) {
 	}
 	if gw.calledWith.Status != service_dto.StatusDriverAssigned {
 		t.Fatalf("expected the published event to carry the assigned status, got %+v", gw.calledWith)
+	}
+	if search.indexCalledWith.Status != service_dto.StatusDriverAssigned {
+		t.Fatalf("expected the last indexed order to carry the assigned status, got %+v", search.indexCalledWith)
 	}
 }
 

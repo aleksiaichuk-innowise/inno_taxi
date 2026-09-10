@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 
 	repo_entity "github.com/aleksiaichuk-innowise/inno_taxi/services/order_service/entity/repository"
 	service_dto "github.com/aleksiaichuk-innowise/inno_taxi/services/order_service/entity/service"
@@ -27,7 +28,11 @@ func (r EsRepository) IndexOrder(ctx context.Context, order service_dto.Order) e
 	defer res.Body.Close()
 
 	if res.IsError() {
-		return fmt.Errorf("index order returned unexpected status %d", res.StatusCode)
+		body, readErr := io.ReadAll(res.Body)
+		if readErr != nil {
+			return fmt.Errorf("index order returned unexpected status %d", res.StatusCode)
+		}
+		return fmt.Errorf("index order returned unexpected status %d: %s", res.StatusCode, body)
 	}
 	return nil
 }

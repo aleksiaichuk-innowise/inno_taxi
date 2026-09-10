@@ -1,6 +1,7 @@
 package grpc
 
 import (
+	"fmt"
 	"time"
 
 	service_dto "github.com/aleksiaichuk-innowise/inno_taxi/services/order_service/entity/service"
@@ -99,4 +100,53 @@ func int64OrZero(v *int64) int64 {
 		return 0
 	}
 	return *v
+}
+
+func statusFromProto(s order_service.Status) service_dto.Status {
+	switch s {
+	case order_service.Status_STATUS_CREATED:
+		return service_dto.StatusCreated
+	case order_service.Status_STATUS_DRIVER_ASSIGNED:
+		return service_dto.StatusDriverAssigned
+	case order_service.Status_STATUS_IN_PROGRESS:
+		return service_dto.StatusInProgress
+	case order_service.Status_STATUS_COMPLETED:
+		return service_dto.StatusCompleted
+	case order_service.Status_STATUS_CANCELLED:
+		return service_dto.StatusCancelled
+	default:
+		return ""
+	}
+}
+
+// searchFilterFromProto converts the wire request to the domain filter,
+// parsing the RFC3339 date-range strings here (not in the service) because
+// a malformed string is a parse failure, not a business-rule validation -
+// see the design doc's "Data flow: search" section.
+func searchFilterFromProto(req *order_service.SearchOrdersRequest) (service_dto.OrderSearchFilter, error) {
+	filter := service_dto.OrderSearchFilter{
+		TaxiType:           taxiTypeFromProto(req.GetTaxiType()),
+		Status:             statusFromProto(req.GetStatus()),
+		MinPriceMinorUnits: req.GetMinPriceMinorUnits(),
+		MaxPriceMinorUnits: req.GetMaxPriceMinorUnits(),
+		Limit:              req.GetLimit(),
+		Offset:             req.GetOffset(),
+	}
+
+	if s := req.GetCreatedAfter(); s != "" {
+		t, err := time.Parse(time.RFC3339, s)
+		if err != nil {
+			return service_dto.OrderSearchFilter{}, fmt.Errorf("invalid created_after: %w", err)
+		}
+		filter.CreatedAfter = t
+	}
+	if s := req.GetCreatedBefore(); s != "" {
+		t, err := time.Parse(time.RFC3339, s)
+		if err != nil {
+			return service_dto.OrderSearchFilter{}, fmt.Errorf("invalid created_before: %w", err)
+		}
+		filter.CreatedBefore = t
+	}
+
+	return filter, nil
 }

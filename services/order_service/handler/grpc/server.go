@@ -202,3 +202,31 @@ func (o OrderServer) ListOrders(ctx context.Context, req *order_service.ListOrde
 		Total:  total,
 	}, nil
 }
+
+// SearchOrders has no ownership scoping and no role check here, unlike
+// every other endpoint in this file - it's an Analyst-only endpoint and
+// role gating for it lives entirely in gateway_service (see the design
+// doc's "Data flow: search"). It does not call
+// interceptor.UserIDFromContext because nothing here needs the caller's
+// identity.
+func (o OrderServer) SearchOrders(ctx context.Context, req *order_service.SearchOrdersRequest) (*order_service.SearchOrdersResponse, error) {
+	filter, err := searchFilterFromProto(req)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	orders, total, err := o.svc.SearchOrders(ctx, filter)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	protoOrders := make([]*order_service.Order, len(orders))
+	for i, ord := range orders {
+		protoOrders[i] = orderToProto(ord)
+	}
+
+	return &order_service.SearchOrdersResponse{
+		Orders: protoOrders,
+		Total:  total,
+	}, nil
+}

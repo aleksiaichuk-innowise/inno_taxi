@@ -38,13 +38,25 @@ type DriverGateway interface {
 	ReleaseDriver(ctx context.Context, userID string) error
 }
 
+// SearchRepository indexes orders into Elasticsearch and serves search
+// queries back for the Analyst-only SearchOrders endpoint. IndexOrder is
+// best-effort at every call site (see search_orders.go and the six write
+// points in create_order.go/cancel_order.go/start_trip.go/complete_trip.go/
+// rate_trip.go) - a search-index write failing must never fail the order
+// operation it's mirroring.
+type SearchRepository interface {
+	IndexOrder(ctx context.Context, order service_dto.Order) error
+	SearchOrders(ctx context.Context, filter service_dto.OrderSearchFilter) ([]service_dto.Order, int64, error)
+}
+
 type OrderService struct {
 	repo    OrderRepository
 	gateway OrderGateway
 	wallet  WalletGateway
 	driver  DriverGateway
+	search  SearchRepository
 }
 
-func NewOrderService(repo OrderRepository, gateway OrderGateway, wallet WalletGateway, driver DriverGateway) OrderService {
-	return OrderService{repo: repo, gateway: gateway, wallet: wallet, driver: driver}
+func NewOrderService(repo OrderRepository, gateway OrderGateway, wallet WalletGateway, driver DriverGateway, search SearchRepository) OrderService {
+	return OrderService{repo: repo, gateway: gateway, wallet: wallet, driver: driver, search: search}
 }

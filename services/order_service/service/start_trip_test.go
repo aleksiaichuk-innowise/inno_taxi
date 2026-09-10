@@ -11,7 +11,7 @@ import (
 
 func TestStartTrip_NotFound(t *testing.T) {
 	repo := &fakeOrderRepository{getErr: errorsx.ErrOrderNotFound}
-	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{})
+	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{}, nil)
 
 	_, err := svc.StartTrip(context.Background(), "order-1", "driver-1")
 	if !errors.Is(err, errorsx.ErrOrderNotFound) {
@@ -22,7 +22,7 @@ func TestStartTrip_NotFound(t *testing.T) {
 func TestStartTrip_Unassigned(t *testing.T) {
 	order := service_dto.Order{ID: "order-1", UserID: "user-1", Status: service_dto.StatusCreated}
 	repo := &fakeOrderRepository{getOrder: &order}
-	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{})
+	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{}, nil)
 
 	_, err := svc.StartTrip(context.Background(), "order-1", "driver-1")
 	if !errors.Is(err, errorsx.ErrOrderNotFound) {
@@ -34,7 +34,7 @@ func TestStartTrip_NotYourAssignment(t *testing.T) {
 	driverID := "someone-else"
 	order := service_dto.Order{ID: "order-1", UserID: "user-1", Status: service_dto.StatusDriverAssigned, DriverID: &driverID}
 	repo := &fakeOrderRepository{getOrder: &order}
-	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{})
+	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{}, nil)
 
 	_, err := svc.StartTrip(context.Background(), "order-1", "driver-1")
 	if !errors.Is(err, errorsx.ErrOrderNotFound) {
@@ -46,7 +46,7 @@ func TestStartTrip_WrongStatus(t *testing.T) {
 	driverID := "driver-1"
 	order := service_dto.Order{ID: "order-1", UserID: "user-1", Status: service_dto.StatusInProgress, DriverID: &driverID}
 	repo := &fakeOrderRepository{getOrder: &order}
-	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{})
+	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{}, nil)
 
 	_, err := svc.StartTrip(context.Background(), "order-1", "driver-1")
 	if !errors.Is(err, errorsx.ErrOrderNotStartable) {
@@ -60,7 +60,7 @@ func TestStartTrip_Succeeds(t *testing.T) {
 	started := order
 	started.Status = service_dto.StatusInProgress
 	repo := &fakeOrderRepository{getOrder: &order, updateOrder: &started}
-	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{})
+	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{}, nil)
 
 	got, err := svc.StartTrip(context.Background(), "order-1", "driver-1")
 	if err != nil {

@@ -11,7 +11,7 @@ import (
 
 func TestCompleteTrip_NotFound(t *testing.T) {
 	repo := &fakeOrderRepository{getErr: errorsx.ErrOrderNotFound}
-	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{})
+	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{}, nil)
 
 	_, err := svc.CompleteTrip(context.Background(), "order-1", "driver-1")
 	if !errors.Is(err, errorsx.ErrOrderNotFound) {
@@ -23,7 +23,7 @@ func TestCompleteTrip_NotYourAssignment(t *testing.T) {
 	driverID := "someone-else"
 	order := service_dto.Order{ID: "order-1", UserID: "user-1", Status: service_dto.StatusInProgress, DriverID: &driverID}
 	repo := &fakeOrderRepository{getOrder: &order}
-	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{})
+	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{}, nil)
 
 	_, err := svc.CompleteTrip(context.Background(), "order-1", "driver-1")
 	if !errors.Is(err, errorsx.ErrOrderNotFound) {
@@ -35,7 +35,7 @@ func TestCompleteTrip_WrongStatus(t *testing.T) {
 	driverID := "driver-1"
 	order := service_dto.Order{ID: "order-1", UserID: "user-1", Status: service_dto.StatusDriverAssigned, DriverID: &driverID}
 	repo := &fakeOrderRepository{getOrder: &order}
-	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{})
+	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{}, nil)
 
 	_, err := svc.CompleteTrip(context.Background(), "order-1", "driver-1")
 	if !errors.Is(err, errorsx.ErrOrderNotCompletable) {
@@ -50,7 +50,7 @@ func TestCompleteTrip_ReleasesDriverThenUpdatesStatus(t *testing.T) {
 	completed.Status = service_dto.StatusCompleted
 	repo := &fakeOrderRepository{getOrder: &order, updateOrder: &completed}
 	driver := &fakeDriverGateway{}
-	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, driver)
+	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, driver, nil)
 
 	got, err := svc.CompleteTrip(context.Background(), "order-1", "driver-1")
 	if err != nil {
@@ -71,7 +71,7 @@ func TestCompleteTrip_ReleaseFailureDoesNotBlockCompletion(t *testing.T) {
 	completed.Status = service_dto.StatusCompleted
 	repo := &fakeOrderRepository{getOrder: &order, updateOrder: &completed}
 	driver := &fakeDriverGateway{releaseErr: errors.New("driver service unreachable")}
-	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, driver)
+	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, driver, nil)
 
 	got, err := svc.CompleteTrip(context.Background(), "order-1", "driver-1")
 	if err != nil {

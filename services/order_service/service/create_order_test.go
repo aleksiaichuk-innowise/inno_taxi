@@ -181,7 +181,7 @@ func TestCreateOrder_InvalidTaxiType(t *testing.T) {
 	repo := &fakeOrderRepository{}
 	gw := &fakeOrderGateway{}
 	wallet := &fakeWalletGateway{}
-	svc := NewOrderService(repo, gw, wallet, &fakeDriverGateway{})
+	svc := NewOrderService(repo, gw, wallet, &fakeDriverGateway{}, nil)
 
 	input := validInput()
 	input.TaxiType = "not-a-real-type"
@@ -199,7 +199,7 @@ func TestCreateOrder_InvalidLocation(t *testing.T) {
 	repo := &fakeOrderRepository{}
 	gw := &fakeOrderGateway{}
 	wallet := &fakeWalletGateway{}
-	svc := NewOrderService(repo, gw, wallet, &fakeDriverGateway{})
+	svc := NewOrderService(repo, gw, wallet, &fakeDriverGateway{}, nil)
 
 	input := validInput()
 	input.Destination = service_dto.Location{}
@@ -217,7 +217,7 @@ func TestCreateOrder_ChargeFailsInsufficientFunds(t *testing.T) {
 	repo := &fakeOrderRepository{}
 	gw := &fakeOrderGateway{}
 	wallet := &fakeWalletGateway{chargeErr: errorsx.ErrInsufficientFunds}
-	svc := NewOrderService(repo, gw, wallet, &fakeDriverGateway{})
+	svc := NewOrderService(repo, gw, wallet, &fakeDriverGateway{}, nil)
 
 	_, err := svc.CreateOrder(context.Background(), validInput())
 	if !errors.Is(err, errorsx.ErrInsufficientFunds) {
@@ -233,7 +233,7 @@ func TestCreateOrder_ChargesBeforePersisting(t *testing.T) {
 	repo := &fakeOrderRepository{order: &created}
 	gw := &fakeOrderGateway{}
 	wallet := &fakeWalletGateway{}
-	svc := NewOrderService(repo, gw, wallet, &fakeDriverGateway{})
+	svc := NewOrderService(repo, gw, wallet, &fakeDriverGateway{}, nil)
 
 	got, err := svc.CreateOrder(context.Background(), validInput())
 	if err != nil {
@@ -267,7 +267,7 @@ func TestCreateOrder_RefundsOnInsertFailure(t *testing.T) {
 	repo := &fakeOrderRepository{err: repoErr}
 	gw := &fakeOrderGateway{}
 	wallet := &fakeWalletGateway{}
-	svc := NewOrderService(repo, gw, wallet, &fakeDriverGateway{})
+	svc := NewOrderService(repo, gw, wallet, &fakeDriverGateway{}, nil)
 
 	_, err := svc.CreateOrder(context.Background(), validInput())
 	if !errors.Is(err, repoErr) {
@@ -289,7 +289,7 @@ func TestCreateOrder_PublishesAfterPersisting(t *testing.T) {
 	repo := &fakeOrderRepository{order: &created}
 	gw := &fakeOrderGateway{}
 	wallet := &fakeWalletGateway{}
-	svc := NewOrderService(repo, gw, wallet, &fakeDriverGateway{})
+	svc := NewOrderService(repo, gw, wallet, &fakeDriverGateway{}, nil)
 
 	got, err := svc.CreateOrder(context.Background(), validInput())
 	if err != nil {
@@ -311,7 +311,7 @@ func TestCreateOrder_PublishFailureDoesNotFailCreateOrder(t *testing.T) {
 	repo := &fakeOrderRepository{order: &created}
 	gw := &fakeOrderGateway{err: errors.New("kafka unreachable")}
 	wallet := &fakeWalletGateway{}
-	svc := NewOrderService(repo, gw, wallet, &fakeDriverGateway{})
+	svc := NewOrderService(repo, gw, wallet, &fakeDriverGateway{}, nil)
 
 	got, err := svc.CreateOrder(context.Background(), validInput())
 	if err != nil {
@@ -333,7 +333,7 @@ func TestCreateOrder_AssignsDriverWhenAvailable(t *testing.T) {
 	gw := &fakeOrderGateway{}
 	wallet := &fakeWalletGateway{}
 	driver := &fakeDriverGateway{claimUserID: "driver-1", claimOK: true}
-	svc := NewOrderService(repo, gw, wallet, driver)
+	svc := NewOrderService(repo, gw, wallet, driver, nil)
 
 	got, err := svc.CreateOrder(context.Background(), validInput())
 	if err != nil {
@@ -359,7 +359,7 @@ func TestCreateOrder_NoDriverAvailable(t *testing.T) {
 	gw := &fakeOrderGateway{}
 	wallet := &fakeWalletGateway{}
 	driver := &fakeDriverGateway{claimOK: false}
-	svc := NewOrderService(repo, gw, wallet, driver)
+	svc := NewOrderService(repo, gw, wallet, driver, nil)
 
 	got, err := svc.CreateOrder(context.Background(), validInput())
 	if err != nil {
@@ -379,7 +379,7 @@ func TestCreateOrder_ClaimErrorDoesNotFailCreateOrder(t *testing.T) {
 	gw := &fakeOrderGateway{}
 	wallet := &fakeWalletGateway{}
 	driver := &fakeDriverGateway{claimErr: errors.New("driver service unreachable")}
-	svc := NewOrderService(repo, gw, wallet, driver)
+	svc := NewOrderService(repo, gw, wallet, driver, nil)
 
 	got, err := svc.CreateOrder(context.Background(), validInput())
 	if err != nil {
@@ -396,7 +396,7 @@ func TestCreateOrder_ReleasesDriverWhenAssignmentFails(t *testing.T) {
 	gw := &fakeOrderGateway{}
 	wallet := &fakeWalletGateway{}
 	driver := &fakeDriverGateway{claimUserID: "driver-1", claimOK: true}
-	svc := NewOrderService(repo, gw, wallet, driver)
+	svc := NewOrderService(repo, gw, wallet, driver, nil)
 
 	got, err := svc.CreateOrder(context.Background(), validInput())
 	if err != nil {
@@ -408,4 +408,29 @@ func TestCreateOrder_ReleasesDriverWhenAssignmentFails(t *testing.T) {
 	if !driver.releaseCalled || driver.releaseArg != "driver-1" {
 		t.Fatalf("expected the claimed driver to be released, got called=%v arg=%q", driver.releaseCalled, driver.releaseArg)
 	}
+}
+
+type fakeSearchRepository struct {
+	indexErr        error
+	indexCalled     bool
+	indexCalledWith service_dto.Order
+
+	searchOrders     []service_dto.Order
+	searchTotal      int64
+	searchErr        error
+	searchCalledWith service_dto.OrderSearchFilter
+}
+
+func (f *fakeSearchRepository) IndexOrder(_ context.Context, order service_dto.Order) error {
+	f.indexCalled = true
+	f.indexCalledWith = order
+	return f.indexErr
+}
+
+func (f *fakeSearchRepository) SearchOrders(_ context.Context, filter service_dto.OrderSearchFilter) ([]service_dto.Order, int64, error) {
+	f.searchCalledWith = filter
+	if f.searchErr != nil {
+		return nil, 0, f.searchErr
+	}
+	return f.searchOrders, f.searchTotal, nil
 }

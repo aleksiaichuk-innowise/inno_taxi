@@ -9,7 +9,7 @@ import (
 
 func TestListOrders_DefaultsLimit(t *testing.T) {
 	repo := &fakeOrderRepository{}
-	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{})
+	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{}, nil)
 
 	if _, _, err := svc.ListOrders(context.Background(), "user-1", 0, 0); err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -24,7 +24,7 @@ func TestListOrders_DefaultsLimit(t *testing.T) {
 
 func TestListOrders_ClampsOversizedLimit(t *testing.T) {
 	repo := &fakeOrderRepository{}
-	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{})
+	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{}, nil)
 
 	if _, _, err := svc.ListOrders(context.Background(), "user-1", 10000, -5); err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -39,7 +39,7 @@ func TestListOrders_ClampsOversizedLimit(t *testing.T) {
 
 func TestListOrders_PassesThroughValidValues(t *testing.T) {
 	repo := &fakeOrderRepository{}
-	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{})
+	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{}, nil)
 
 	if _, _, err := svc.ListOrders(context.Background(), "user-1", 10, 30); err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -55,7 +55,7 @@ func TestListOrders_PassesThroughValidValues(t *testing.T) {
 func TestListOrders_DelegatesResults(t *testing.T) {
 	want := []service_dto.Order{{ID: "order-1"}, {ID: "order-2"}}
 	repo := &fakeOrderRepository{listOrders: want, listTotal: 5}
-	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{})
+	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{}, nil)
 
 	got, total, err := svc.ListOrders(context.Background(), "user-1", 20, 0)
 	if err != nil {

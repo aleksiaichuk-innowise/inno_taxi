@@ -65,7 +65,7 @@ func Run(cfg *config.Config) error {
 	repo := pg_repo.NewPgRepo(dbConn)
 
 	// services
-	orderService := service.NewOrderService(repo, kafkaGateway, walletGateway, driverGateway)
+	orderService := service.NewOrderService(repo, kafkaGateway, walletGateway, driverGateway, nil)
 
 	// -- Grpc
 

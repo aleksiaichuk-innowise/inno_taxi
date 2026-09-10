@@ -10,7 +10,7 @@ import (
 )
 
 func TestRateTrip_InvalidRating(t *testing.T) {
-	svc := NewOrderService(&fakeOrderRepository{}, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{})
+	svc := NewOrderService(&fakeOrderRepository{}, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{}, nil)
 
 	for _, r := range []int32{0, 6, -1} {
 		_, err := svc.RateTrip(context.Background(), "order-1", "user-1", r, nil)
@@ -22,7 +22,7 @@ func TestRateTrip_InvalidRating(t *testing.T) {
 
 func TestRateTrip_NotFound(t *testing.T) {
 	repo := &fakeOrderRepository{getErr: errorsx.ErrOrderNotFound}
-	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{})
+	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{}, nil)
 
 	_, err := svc.RateTrip(context.Background(), "order-1", "user-1", 5, nil)
 	if !errors.Is(err, errorsx.ErrOrderNotFound) {
@@ -33,7 +33,7 @@ func TestRateTrip_NotFound(t *testing.T) {
 func TestRateTrip_NotYourOrder(t *testing.T) {
 	order := service_dto.Order{ID: "order-1", UserID: "someone-else", Status: service_dto.StatusCompleted}
 	repo := &fakeOrderRepository{getOrder: &order}
-	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{})
+	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{}, nil)
 
 	_, err := svc.RateTrip(context.Background(), "order-1", "user-1", 5, nil)
 	if !errors.Is(err, errorsx.ErrOrderNotFound) {
@@ -44,7 +44,7 @@ func TestRateTrip_NotYourOrder(t *testing.T) {
 func TestRateTrip_NotCompleted(t *testing.T) {
 	order := service_dto.Order{ID: "order-1", UserID: "user-1", Status: service_dto.StatusInProgress}
 	repo := &fakeOrderRepository{getOrder: &order}
-	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{})
+	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{}, nil)
 
 	_, err := svc.RateTrip(context.Background(), "order-1", "user-1", 5, nil)
 	if !errors.Is(err, errorsx.ErrOrderNotRatable) {
@@ -56,7 +56,7 @@ func TestRateTrip_AlreadyRated(t *testing.T) {
 	existing := int32(4)
 	order := service_dto.Order{ID: "order-1", UserID: "user-1", Status: service_dto.StatusCompleted, Rating: &existing}
 	repo := &fakeOrderRepository{getOrder: &order}
-	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{})
+	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{}, nil)
 
 	_, err := svc.RateTrip(context.Background(), "order-1", "user-1", 5, nil)
 	if !errors.Is(err, errorsx.ErrOrderAlreadyRated) {
@@ -70,7 +70,7 @@ func TestRateTrip_AlreadyRated(t *testing.T) {
 func TestRateTrip_RaceCaughtByRepository(t *testing.T) {
 	order := service_dto.Order{ID: "order-1", UserID: "user-1", Status: service_dto.StatusCompleted}
 	repo := &fakeOrderRepository{getOrder: &order, rateOrderErr: errorsx.ErrOrderAlreadyRated}
-	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{})
+	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{}, nil)
 
 	_, err := svc.RateTrip(context.Background(), "order-1", "user-1", 5, nil)
 	if !errors.Is(err, errorsx.ErrOrderAlreadyRated) {
@@ -87,7 +87,7 @@ func TestRateTrip_Succeeds(t *testing.T) {
 	rated.Comment = &comment
 	repo := &fakeOrderRepository{getOrder: &order, ratedOrder: &rated}
 	gw := &fakeOrderGateway{}
-	svc := NewOrderService(repo, gw, &fakeWalletGateway{}, &fakeDriverGateway{})
+	svc := NewOrderService(repo, gw, &fakeWalletGateway{}, &fakeDriverGateway{}, nil)
 
 	got, err := svc.RateTrip(context.Background(), "order-1", "user-1", 5, &comment)
 	if err != nil {
@@ -105,7 +105,7 @@ func TestRateTrip_PublishFailureDoesNotFailRateTrip(t *testing.T) {
 	order := service_dto.Order{ID: "order-1", UserID: "user-1", Status: service_dto.StatusCompleted}
 	repo := &fakeOrderRepository{getOrder: &order}
 	gw := &fakeOrderGateway{ratedErr: errors.New("kafka unreachable")}
-	svc := NewOrderService(repo, gw, &fakeWalletGateway{}, &fakeDriverGateway{})
+	svc := NewOrderService(repo, gw, &fakeWalletGateway{}, &fakeDriverGateway{}, nil)
 
 	_, err := svc.RateTrip(context.Background(), "order-1", "user-1", 5, nil)
 	if err != nil {

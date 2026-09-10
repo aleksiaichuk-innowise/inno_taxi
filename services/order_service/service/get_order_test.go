@@ -11,7 +11,7 @@ import (
 
 func TestGetOrder_NotFound(t *testing.T) {
 	repo := &fakeOrderRepository{getErr: errorsx.ErrOrderNotFound}
-	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{})
+	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{}, nil)
 
 	_, err := svc.GetOrder(context.Background(), "order-1", "user-1")
 	if !errors.Is(err, errorsx.ErrOrderNotFound) {
@@ -22,7 +22,7 @@ func TestGetOrder_NotFound(t *testing.T) {
 func TestGetOrder_ViewableByRider(t *testing.T) {
 	order := service_dto.Order{ID: "order-1", UserID: "user-1", Status: service_dto.StatusCompleted}
 	repo := &fakeOrderRepository{getOrder: &order}
-	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{})
+	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{}, nil)
 
 	got, err := svc.GetOrder(context.Background(), "order-1", "user-1")
 	if err != nil {
@@ -37,7 +37,7 @@ func TestGetOrder_ViewableByAssignedDriver(t *testing.T) {
 	driverID := "driver-1"
 	order := service_dto.Order{ID: "order-1", UserID: "user-1", DriverID: &driverID, Status: service_dto.StatusInProgress}
 	repo := &fakeOrderRepository{getOrder: &order}
-	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{})
+	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{}, nil)
 
 	got, err := svc.GetOrder(context.Background(), "order-1", "driver-1")
 	if err != nil {
@@ -52,7 +52,7 @@ func TestGetOrder_NotYourOrder(t *testing.T) {
 	driverID := "driver-1"
 	order := service_dto.Order{ID: "order-1", UserID: "user-1", DriverID: &driverID, Status: service_dto.StatusInProgress}
 	repo := &fakeOrderRepository{getOrder: &order}
-	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{})
+	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{}, nil)
 
 	_, err := svc.GetOrder(context.Background(), "order-1", "someone-else")
 	if !errors.Is(err, errorsx.ErrOrderNotFound) {

@@ -1316,7 +1316,7 @@ func TestStartTrip_IndexFailureDoesNotFailStartTrip(t *testing.T) {
 }
 ```
 
-Add `"errors"` to this file's import block (it isn't imported there yet).
+Check `start_trip_test.go` already imports `"errors"` (it does, for its existing `errors.Is`-based tests) - no new imports needed.
 
 - [ ] **Step 9: Instrument `StartTrip`**
 

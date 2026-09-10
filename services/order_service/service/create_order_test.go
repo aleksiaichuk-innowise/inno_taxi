@@ -32,6 +32,14 @@ type fakeOrderRepository struct {
 	ratedOrder      *service_dto.Order
 	rateOrderErr    error
 	rateOrderCalled bool
+
+	listOrders       []service_dto.Order
+	listTotal        int64
+	listErr          error
+	listCalled       bool
+	listCalledUserID string
+	listCalledLimit  int32
+	listCalledOffset int32
 }
 
 func (f *fakeOrderRepository) CreateOrder(_ context.Context, id string, price int64, input service_dto.CreateOrderInput) (service_dto.Order, error) {
@@ -78,6 +86,17 @@ func (f *fakeOrderRepository) RateOrder(_ context.Context, _ string, rating int3
 		return *f.ratedOrder, nil
 	}
 	return service_dto.Order{Rating: &rating, Comment: comment}, nil
+}
+
+func (f *fakeOrderRepository) ListOrdersByUser(_ context.Context, userID string, limit, offset int32) ([]service_dto.Order, int64, error) {
+	f.listCalled = true
+	f.listCalledUserID = userID
+	f.listCalledLimit = limit
+	f.listCalledOffset = offset
+	if f.listErr != nil {
+		return nil, 0, f.listErr
+	}
+	return f.listOrders, f.listTotal, nil
 }
 
 type fakeOrderGateway struct {

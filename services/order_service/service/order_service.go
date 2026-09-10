@@ -12,6 +12,7 @@ type OrderRepository interface {
 	UpdateOrderStatus(ctx context.Context, id string, status service_dto.Status) (service_dto.Order, error)
 	AssignDriver(ctx context.Context, id, driverID string) (service_dto.Order, error)
 	RateOrder(ctx context.Context, id string, rating int32, comment *string) (service_dto.Order, error)
+	ListOrdersByUser(ctx context.Context, userID string, limit, offset int32) ([]service_dto.Order, int64, error)
 }
 
 type OrderGateway interface {

@@ -159,3 +159,46 @@ func (o OrderServer) RateTrip(ctx context.Context, req *order_service.RateTripRe
 		Order: orderToProto(res),
 	}, nil
 }
+
+func (o OrderServer) GetOrder(ctx context.Context, req *order_service.GetOrderRequest) (*order_service.GetOrderResponse, error) {
+	userId, ok := interceptor.UserIDFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.InvalidArgument, "missing user ID")
+	}
+	if req.GetOrderId() == "" {
+		return nil, status.Error(codes.InvalidArgument, "order id is required")
+	}
+
+	res, err := o.svc.GetOrder(ctx, req.GetOrderId(), userId)
+	if err != nil {
+		if errors.Is(err, errorsx.ErrOrderNotFound) {
+			return nil, status.Error(codes.NotFound, err.Error())
+		}
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	return &order_service.GetOrderResponse{
+		Order: orderToProto(res),
+	}, nil
+}
+
+func (o OrderServer) ListOrders(ctx context.Context, req *order_service.ListOrdersRequest) (*order_service.ListOrdersResponse, error) {
+	userId, ok := interceptor.UserIDFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.InvalidArgument, "missing user ID")
+	}
+
+	orders, total, err := o.svc.ListOrders(ctx, userId, req.GetLimit(), req.GetOffset())
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	protoOrders := make([]*order_service.Order, len(orders))
+	for i, ord := range orders {
+		protoOrders[i] = orderToProto(ord)
+	}
+
+	return &order_service.ListOrdersResponse{
+		Orders: protoOrders,
+		Total:  total,
+	}, nil
+}

@@ -233,7 +233,7 @@ func TestCreateOrder_ChargesBeforePersisting(t *testing.T) {
 	repo := &fakeOrderRepository{order: &created}
 	gw := &fakeOrderGateway{}
 	wallet := &fakeWalletGateway{}
-	svc := NewOrderService(repo, gw, wallet, &fakeDriverGateway{}, nil)
+	svc := NewOrderService(repo, gw, wallet, &fakeDriverGateway{}, &fakeSearchRepository{})
 
 	got, err := svc.CreateOrder(context.Background(), validInput())
 	if err != nil {
@@ -289,7 +289,7 @@ func TestCreateOrder_PublishesAfterPersisting(t *testing.T) {
 	repo := &fakeOrderRepository{order: &created}
 	gw := &fakeOrderGateway{}
 	wallet := &fakeWalletGateway{}
-	svc := NewOrderService(repo, gw, wallet, &fakeDriverGateway{}, nil)
+	svc := NewOrderService(repo, gw, wallet, &fakeDriverGateway{}, &fakeSearchRepository{})
 
 	got, err := svc.CreateOrder(context.Background(), validInput())
 	if err != nil {
@@ -311,7 +311,7 @@ func TestCreateOrder_PublishFailureDoesNotFailCreateOrder(t *testing.T) {
 	repo := &fakeOrderRepository{order: &created}
 	gw := &fakeOrderGateway{err: errors.New("kafka unreachable")}
 	wallet := &fakeWalletGateway{}
-	svc := NewOrderService(repo, gw, wallet, &fakeDriverGateway{}, nil)
+	svc := NewOrderService(repo, gw, wallet, &fakeDriverGateway{}, &fakeSearchRepository{})
 
 	got, err := svc.CreateOrder(context.Background(), validInput())
 	if err != nil {
@@ -333,7 +333,7 @@ func TestCreateOrder_AssignsDriverWhenAvailable(t *testing.T) {
 	gw := &fakeOrderGateway{}
 	wallet := &fakeWalletGateway{}
 	driver := &fakeDriverGateway{claimUserID: "driver-1", claimOK: true}
-	svc := NewOrderService(repo, gw, wallet, driver, nil)
+	svc := NewOrderService(repo, gw, wallet, driver, &fakeSearchRepository{})
 
 	got, err := svc.CreateOrder(context.Background(), validInput())
 	if err != nil {
@@ -359,7 +359,7 @@ func TestCreateOrder_NoDriverAvailable(t *testing.T) {
 	gw := &fakeOrderGateway{}
 	wallet := &fakeWalletGateway{}
 	driver := &fakeDriverGateway{claimOK: false}
-	svc := NewOrderService(repo, gw, wallet, driver, nil)
+	svc := NewOrderService(repo, gw, wallet, driver, &fakeSearchRepository{})
 
 	got, err := svc.CreateOrder(context.Background(), validInput())
 	if err != nil {
@@ -379,7 +379,7 @@ func TestCreateOrder_ClaimErrorDoesNotFailCreateOrder(t *testing.T) {
 	gw := &fakeOrderGateway{}
 	wallet := &fakeWalletGateway{}
 	driver := &fakeDriverGateway{claimErr: errors.New("driver service unreachable")}
-	svc := NewOrderService(repo, gw, wallet, driver, nil)
+	svc := NewOrderService(repo, gw, wallet, driver, &fakeSearchRepository{})
 
 	got, err := svc.CreateOrder(context.Background(), validInput())
 	if err != nil {
@@ -396,7 +396,7 @@ func TestCreateOrder_ReleasesDriverWhenAssignmentFails(t *testing.T) {
 	gw := &fakeOrderGateway{}
 	wallet := &fakeWalletGateway{}
 	driver := &fakeDriverGateway{claimUserID: "driver-1", claimOK: true}
-	svc := NewOrderService(repo, gw, wallet, driver, nil)
+	svc := NewOrderService(repo, gw, wallet, driver, &fakeSearchRepository{})
 
 	got, err := svc.CreateOrder(context.Background(), validInput())
 	if err != nil {
@@ -433,4 +433,34 @@ func (f *fakeSearchRepository) SearchOrders(_ context.Context, filter service_dt
 		return nil, 0, f.searchErr
 	}
 	return f.searchOrders, f.searchTotal, nil
+}
+
+func TestCreateOrder_IndexesOrderAfterPersisting(t *testing.T) {
+	created := service_dto.Order{ID: "order-1", UserID: "user-1", Status: service_dto.StatusCreated}
+	repo := &fakeOrderRepository{order: &created}
+	search := &fakeSearchRepository{}
+	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{}, search)
+
+	_, err := svc.CreateOrder(context.Background(), validInput())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !search.indexCalled {
+		t.Fatal("expected the order to be indexed after being persisted")
+	}
+	if search.indexCalledWith.ID != "order-1" {
+		t.Fatalf("expected the persisted order to be indexed, got %+v", search.indexCalledWith)
+	}
+}
+
+func TestCreateOrder_IndexFailureDoesNotFailCreateOrder(t *testing.T) {
+	created := service_dto.Order{ID: "order-1", UserID: "user-1", Status: service_dto.StatusCreated}
+	repo := &fakeOrderRepository{order: &created}
+	search := &fakeSearchRepository{indexErr: errors.New("elasticsearch unreachable")}
+	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{}, search)
+
+	_, err := svc.CreateOrder(context.Background(), validInput())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 }

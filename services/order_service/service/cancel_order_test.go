@@ -61,7 +61,7 @@ func TestCancelOrder_RefundsThenUpdatesStatus(t *testing.T) {
 	cancelled.Status = service_dto.StatusCancelled
 	repo := &fakeOrderRepository{getOrder: &order, updateOrder: &cancelled}
 	wallet := &fakeWalletGateway{}
-	svc := NewOrderService(repo, &fakeOrderGateway{}, wallet, &fakeDriverGateway{}, nil)
+	svc := NewOrderService(repo, &fakeOrderGateway{}, wallet, &fakeDriverGateway{}, &fakeSearchRepository{})
 
 	got, err := svc.CancelOrder(context.Background(), "order-1", "user-1")
 	if err != nil {
@@ -101,7 +101,7 @@ func TestCancelOrder_AllowsDriverAssignedStatus(t *testing.T) {
 	repo := &fakeOrderRepository{getOrder: &order, updateOrder: &cancelled}
 	wallet := &fakeWalletGateway{}
 	driver := &fakeDriverGateway{}
-	svc := NewOrderService(repo, &fakeOrderGateway{}, wallet, driver, nil)
+	svc := NewOrderService(repo, &fakeOrderGateway{}, wallet, driver, &fakeSearchRepository{})
 
 	got, err := svc.CancelOrder(context.Background(), "order-1", "user-1")
 	if err != nil {
@@ -122,7 +122,7 @@ func TestCancelOrder_NoDriverReleaseWhenUnassigned(t *testing.T) {
 	repo := &fakeOrderRepository{getOrder: &order, updateOrder: &cancelled}
 	wallet := &fakeWalletGateway{}
 	driver := &fakeDriverGateway{}
-	svc := NewOrderService(repo, &fakeOrderGateway{}, wallet, driver, nil)
+	svc := NewOrderService(repo, &fakeOrderGateway{}, wallet, driver, &fakeSearchRepository{})
 
 	if _, err := svc.CancelOrder(context.Background(), "order-1", "user-1"); err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -140,7 +140,7 @@ func TestCancelOrder_ReleaseFailureDoesNotBlockCancellation(t *testing.T) {
 	repo := &fakeOrderRepository{getOrder: &order, updateOrder: &cancelled}
 	wallet := &fakeWalletGateway{}
 	driver := &fakeDriverGateway{releaseErr: errors.New("driver service unreachable")}
-	svc := NewOrderService(repo, &fakeOrderGateway{}, wallet, driver, nil)
+	svc := NewOrderService(repo, &fakeOrderGateway{}, wallet, driver, &fakeSearchRepository{})
 
 	got, err := svc.CancelOrder(context.Background(), "order-1", "user-1")
 	if err != nil {
@@ -148,5 +148,36 @@ func TestCancelOrder_ReleaseFailureDoesNotBlockCancellation(t *testing.T) {
 	}
 	if got.Status != service_dto.StatusCancelled {
 		t.Fatalf("got status %q, want cancelled", got.Status)
+	}
+}
+
+func TestCancelOrder_IndexesOrderAfterCancelling(t *testing.T) {
+	order := service_dto.Order{ID: "order-1", UserID: "user-1", Status: service_dto.StatusCreated}
+	cancelled := order
+	cancelled.Status = service_dto.StatusCancelled
+	repo := &fakeOrderRepository{getOrder: &order, updateOrder: &cancelled}
+	search := &fakeSearchRepository{}
+	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{}, search)
+
+	_, err := svc.CancelOrder(context.Background(), "order-1", "user-1")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !search.indexCalled || search.indexCalledWith.Status != service_dto.StatusCancelled {
+		t.Fatalf("expected the cancelled order to be indexed, got called=%v order=%+v", search.indexCalled, search.indexCalledWith)
+	}
+}
+
+func TestCancelOrder_IndexFailureDoesNotFailCancelOrder(t *testing.T) {
+	order := service_dto.Order{ID: "order-1", UserID: "user-1", Status: service_dto.StatusCreated}
+	cancelled := order
+	cancelled.Status = service_dto.StatusCancelled
+	repo := &fakeOrderRepository{getOrder: &order, updateOrder: &cancelled}
+	search := &fakeSearchRepository{indexErr: errors.New("elasticsearch unreachable")}
+	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{}, search)
+
+	_, err := svc.CancelOrder(context.Background(), "order-1", "user-1")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }

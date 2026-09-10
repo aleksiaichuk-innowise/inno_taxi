@@ -27,5 +27,14 @@ func (s OrderService) CompleteTrip(ctx context.Context, orderID, driverUserID st
 		slog.ErrorContext(ctx, "release driver on trip completion failed", "order_id", order.ID, "driver_id", *order.DriverID, "error", err)
 	}
 
-	return s.repo.UpdateOrderStatus(ctx, orderID, service_dto.StatusCompleted)
+	updated, err := s.repo.UpdateOrderStatus(ctx, orderID, service_dto.StatusCompleted)
+	if err != nil {
+		return service_dto.Order{}, err
+	}
+
+	if err := s.search.IndexOrder(ctx, updated); err != nil {
+		slog.ErrorContext(ctx, "index order in search failed", "order_id", updated.ID, "error", err)
+	}
+
+	return updated, nil
 }

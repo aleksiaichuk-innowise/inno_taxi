@@ -87,7 +87,7 @@ func TestRateTrip_Succeeds(t *testing.T) {
 	rated.Comment = &comment
 	repo := &fakeOrderRepository{getOrder: &order, ratedOrder: &rated}
 	gw := &fakeOrderGateway{}
-	svc := NewOrderService(repo, gw, &fakeWalletGateway{}, &fakeDriverGateway{}, nil)
+	svc := NewOrderService(repo, gw, &fakeWalletGateway{}, &fakeDriverGateway{}, &fakeSearchRepository{})
 
 	got, err := svc.RateTrip(context.Background(), "order-1", "user-1", 5, &comment)
 	if err != nil {
@@ -105,10 +105,43 @@ func TestRateTrip_PublishFailureDoesNotFailRateTrip(t *testing.T) {
 	order := service_dto.Order{ID: "order-1", UserID: "user-1", Status: service_dto.StatusCompleted}
 	repo := &fakeOrderRepository{getOrder: &order}
 	gw := &fakeOrderGateway{ratedErr: errors.New("kafka unreachable")}
-	svc := NewOrderService(repo, gw, &fakeWalletGateway{}, &fakeDriverGateway{}, nil)
+	svc := NewOrderService(repo, gw, &fakeWalletGateway{}, &fakeDriverGateway{}, &fakeSearchRepository{})
 
 	_, err := svc.RateTrip(context.Background(), "order-1", "user-1", 5, nil)
 	if err != nil {
 		t.Fatalf("expected RateTrip to succeed despite publish failure, got %v", err)
+	}
+}
+
+func TestRateTrip_IndexesOrderAfterRating(t *testing.T) {
+	order := service_dto.Order{ID: "order-1", UserID: "user-1", Status: service_dto.StatusCompleted}
+	rating := int32(5)
+	rated := order
+	rated.Rating = &rating
+	repo := &fakeOrderRepository{getOrder: &order, ratedOrder: &rated}
+	search := &fakeSearchRepository{}
+	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{}, search)
+
+	_, err := svc.RateTrip(context.Background(), "order-1", "user-1", 5, nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !search.indexCalled || search.indexCalledWith.ID != "order-1" {
+		t.Fatalf("expected the rated order to be indexed, got called=%v order=%+v", search.indexCalled, search.indexCalledWith)
+	}
+}
+
+func TestRateTrip_IndexFailureDoesNotFailRateTrip(t *testing.T) {
+	order := service_dto.Order{ID: "order-1", UserID: "user-1", Status: service_dto.StatusCompleted}
+	rating := int32(5)
+	rated := order
+	rated.Rating = &rating
+	repo := &fakeOrderRepository{getOrder: &order, ratedOrder: &rated}
+	search := &fakeSearchRepository{indexErr: errors.New("elasticsearch unreachable")}
+	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{}, search)
+
+	_, err := svc.RateTrip(context.Background(), "order-1", "user-1", 5, nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }

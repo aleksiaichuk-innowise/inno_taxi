@@ -37,6 +37,10 @@ func (s OrderService) RateTrip(ctx context.Context, orderID, userID string, rati
 		return service_dto.Order{}, err
 	}
 
+	if err := s.search.IndexOrder(ctx, rated); err != nil {
+		slog.ErrorContext(ctx, "index order in search failed", "order_id", rated.ID, "error", err)
+	}
+
 	// Best-effort and post-commit, same trade-off as order_created's publish.
 	if err := s.gateway.PublishOrderRated(ctx, rated); err != nil {
 		slog.ErrorContext(ctx, "publish order rated event failed", "order_id", rated.ID, "error", err)

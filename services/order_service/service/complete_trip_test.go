@@ -50,7 +50,7 @@ func TestCompleteTrip_ReleasesDriverThenUpdatesStatus(t *testing.T) {
 	completed.Status = service_dto.StatusCompleted
 	repo := &fakeOrderRepository{getOrder: &order, updateOrder: &completed}
 	driver := &fakeDriverGateway{}
-	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, driver, nil)
+	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, driver, &fakeSearchRepository{})
 
 	got, err := svc.CompleteTrip(context.Background(), "order-1", "driver-1")
 	if err != nil {
@@ -71,7 +71,7 @@ func TestCompleteTrip_ReleaseFailureDoesNotBlockCompletion(t *testing.T) {
 	completed.Status = service_dto.StatusCompleted
 	repo := &fakeOrderRepository{getOrder: &order, updateOrder: &completed}
 	driver := &fakeDriverGateway{releaseErr: errors.New("driver service unreachable")}
-	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, driver, nil)
+	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, driver, &fakeSearchRepository{})
 
 	got, err := svc.CompleteTrip(context.Background(), "order-1", "driver-1")
 	if err != nil {
@@ -79,5 +79,38 @@ func TestCompleteTrip_ReleaseFailureDoesNotBlockCompletion(t *testing.T) {
 	}
 	if got.Status != service_dto.StatusCompleted {
 		t.Fatalf("got status %q, want completed", got.Status)
+	}
+}
+
+func TestCompleteTrip_IndexesOrderAfterCompleting(t *testing.T) {
+	driverID := "driver-1"
+	order := service_dto.Order{ID: "order-1", UserID: "user-1", Status: service_dto.StatusInProgress, DriverID: &driverID}
+	completed := order
+	completed.Status = service_dto.StatusCompleted
+	repo := &fakeOrderRepository{getOrder: &order, updateOrder: &completed}
+	search := &fakeSearchRepository{}
+	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{}, search)
+
+	_, err := svc.CompleteTrip(context.Background(), "order-1", "driver-1")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !search.indexCalled || search.indexCalledWith.Status != service_dto.StatusCompleted {
+		t.Fatalf("expected the completed order to be indexed, got called=%v order=%+v", search.indexCalled, search.indexCalledWith)
+	}
+}
+
+func TestCompleteTrip_IndexFailureDoesNotFailCompleteTrip(t *testing.T) {
+	driverID := "driver-1"
+	order := service_dto.Order{ID: "order-1", UserID: "user-1", Status: service_dto.StatusInProgress, DriverID: &driverID}
+	completed := order
+	completed.Status = service_dto.StatusCompleted
+	repo := &fakeOrderRepository{getOrder: &order, updateOrder: &completed}
+	search := &fakeSearchRepository{indexErr: errors.New("elasticsearch unreachable")}
+	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{}, search)
+
+	_, err := svc.CompleteTrip(context.Background(), "order-1", "driver-1")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }

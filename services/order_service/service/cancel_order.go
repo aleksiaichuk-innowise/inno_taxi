@@ -45,5 +45,14 @@ func (s OrderService) CancelOrder(ctx context.Context, orderID, userID string) (
 		}
 	}
 
-	return s.repo.UpdateOrderStatus(ctx, orderID, service_dto.StatusCancelled)
+	updated, err := s.repo.UpdateOrderStatus(ctx, orderID, service_dto.StatusCancelled)
+	if err != nil {
+		return service_dto.Order{}, err
+	}
+
+	if err := s.search.IndexOrder(ctx, updated); err != nil {
+		slog.ErrorContext(ctx, "index order in search failed", "order_id", updated.ID, "error", err)
+	}
+
+	return updated, nil
 }

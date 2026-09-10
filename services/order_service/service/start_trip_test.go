@@ -60,7 +60,7 @@ func TestStartTrip_Succeeds(t *testing.T) {
 	started := order
 	started.Status = service_dto.StatusInProgress
 	repo := &fakeOrderRepository{getOrder: &order, updateOrder: &started}
-	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{}, nil)
+	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{}, &fakeSearchRepository{})
 
 	got, err := svc.StartTrip(context.Background(), "order-1", "driver-1")
 	if err != nil {
@@ -68,5 +68,38 @@ func TestStartTrip_Succeeds(t *testing.T) {
 	}
 	if got.Status != service_dto.StatusInProgress {
 		t.Fatalf("got status %q, want in_progress", got.Status)
+	}
+}
+
+func TestStartTrip_IndexesOrderAfterStarting(t *testing.T) {
+	driverID := "driver-1"
+	order := service_dto.Order{ID: "order-1", UserID: "user-1", Status: service_dto.StatusDriverAssigned, DriverID: &driverID}
+	started := order
+	started.Status = service_dto.StatusInProgress
+	repo := &fakeOrderRepository{getOrder: &order, updateOrder: &started}
+	search := &fakeSearchRepository{}
+	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{}, search)
+
+	_, err := svc.StartTrip(context.Background(), "order-1", "driver-1")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !search.indexCalled || search.indexCalledWith.Status != service_dto.StatusInProgress {
+		t.Fatalf("expected the started order to be indexed, got called=%v order=%+v", search.indexCalled, search.indexCalledWith)
+	}
+}
+
+func TestStartTrip_IndexFailureDoesNotFailStartTrip(t *testing.T) {
+	driverID := "driver-1"
+	order := service_dto.Order{ID: "order-1", UserID: "user-1", Status: service_dto.StatusDriverAssigned, DriverID: &driverID}
+	started := order
+	started.Status = service_dto.StatusInProgress
+	repo := &fakeOrderRepository{getOrder: &order, updateOrder: &started}
+	search := &fakeSearchRepository{indexErr: errors.New("elasticsearch unreachable")}
+	svc := NewOrderService(repo, &fakeOrderGateway{}, &fakeWalletGateway{}, &fakeDriverGateway{}, search)
+
+	_, err := svc.StartTrip(context.Background(), "order-1", "driver-1")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"log/slog"
 
 	service_dto "github.com/aleksiaichuk-innowise/inno_taxi/services/order_service/entity/service"
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/order_service/errorsx"
@@ -22,5 +23,14 @@ func (s OrderService) StartTrip(ctx context.Context, orderID, driverUserID strin
 		return service_dto.Order{}, errorsx.ErrOrderNotStartable
 	}
 
-	return s.repo.UpdateOrderStatus(ctx, orderID, service_dto.StatusInProgress)
+	updated, err := s.repo.UpdateOrderStatus(ctx, orderID, service_dto.StatusInProgress)
+	if err != nil {
+		return service_dto.Order{}, err
+	}
+
+	if err := s.search.IndexOrder(ctx, updated); err != nil {
+		slog.ErrorContext(ctx, "index order in search failed", "order_id", updated.ID, "error", err)
+	}
+
+	return updated, nil
 }

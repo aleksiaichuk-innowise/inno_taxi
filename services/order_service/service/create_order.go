@@ -44,6 +44,10 @@ func (s OrderService) CreateOrder(ctx context.Context, input service_dto.CreateO
 		return service_dto.Order{}, err
 	}
 
+	if err := s.search.IndexOrder(ctx, order); err != nil {
+		slog.ErrorContext(ctx, "index order in search failed", "order_id", order.ID, "error", err)
+	}
+
 	order = s.tryAssignDriver(ctx, order)
 
 	// Publish is best-effort and post-commit: a failure here must not undo or
@@ -78,6 +82,10 @@ func (s OrderService) tryAssignDriver(ctx context.Context, order service_dto.Ord
 			slog.ErrorContext(ctx, "release driver after failed assignment failed", "order_id", order.ID, "driver_id", driverID, "error", releaseErr)
 		}
 		return order
+	}
+
+	if err := s.search.IndexOrder(ctx, assigned); err != nil {
+		slog.ErrorContext(ctx, "index order in search failed", "order_id", assigned.ID, "error", err)
 	}
 
 	return assigned

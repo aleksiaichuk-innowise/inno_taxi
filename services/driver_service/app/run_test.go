@@ -49,9 +49,15 @@ func (f *fakeDriverRepository) FindByStatus(_ context.Context, _ service_dto.Sta
 	return nil, nil
 }
 
+type fakeRatingsGateway struct{}
+
+func (f *fakeRatingsGateway) GetDriverRatingStats(_ context.Context, _ string) (float64, int64, error) {
+	return 0, 0, nil
+}
+
 func testRouter(t *testing.T) *gin.Engine {
 	t.Helper()
-	svc := service.NewDriverService(&fakeDriverRepository{})
+	svc := service.NewDriverService(&fakeDriverRepository{}, &fakeRatingsGateway{})
 	h := http_handler.NewDriverHandler(svc, validator.New())
 	r := gin.New()
 	registerRoutes(r, h, "test-secret")

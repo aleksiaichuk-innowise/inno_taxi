@@ -22,9 +22,11 @@ func (h Handler) Profile(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, httpdto.DriverResp{
-		ID:       p.ID,
-		UserID:   p.UserID,
-		TaxiType: string(p.TaxiType),
-		Status:   string(p.Status),
+		ID:            p.ID,
+		UserID:        p.UserID,
+		TaxiType:      string(p.TaxiType),
+		Status:        string(p.Status),
+		RatingAverage: p.RatingAverage,
+		RatingCount:   p.RatingCount,
 	})
 }

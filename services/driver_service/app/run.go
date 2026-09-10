@@ -13,6 +13,7 @@ import (
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/driver_service/app/db/mongo"
 	appkafka "github.com/aleksiaichuk-innowise/inno_taxi/services/driver_service/app/kafka"
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/driver_service/config"
+	"github.com/aleksiaichuk-innowise/inno_taxi/services/driver_service/gateway/analytic_service"
 	http_handler "github.com/aleksiaichuk-innowise/inno_taxi/services/driver_service/handler/http"
 	kafkahandler "github.com/aleksiaichuk-innowise/inno_taxi/services/driver_service/handler/kafka"
 	mongo_migration "github.com/aleksiaichuk-innowise/inno_taxi/services/driver_service/migrations/mongo"
@@ -45,7 +46,8 @@ func Run(cfg *config.Config) error {
 	}
 
 	repo := repository.NewDriverRepository(*mongoConn)
-	s := service.NewDriverService(repo)
+	ratings := analytic_service.NewAnalyticGateway(cfg.AnalyticService.BaseURL, nil)
+	s := service.NewDriverService(repo, ratings)
 
 	consumerGroup, err := appkafka.NewConsumerGroup(cfg.Kafka.Brokers)
 	if err != nil {

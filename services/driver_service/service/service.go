@@ -15,12 +15,18 @@ type DriverRepository interface {
 	ClaimAvailableDriver(ctx context.Context, taxiType string) (service_dto.Driver, error)
 }
 
-type DriverService struct {
-	repo DriverRepository
+type RatingsGateway interface {
+	GetDriverRatingStats(ctx context.Context, driverID string) (average float64, count int64, err error)
 }
 
-func NewDriverService(r DriverRepository) *DriverService {
+type DriverService struct {
+	repo    DriverRepository
+	ratings RatingsGateway
+}
+
+func NewDriverService(r DriverRepository, ratings RatingsGateway) *DriverService {
 	return &DriverService{
-		repo: r,
+		repo:    r,
+		ratings: ratings,
 	}
 }

@@ -55,7 +55,7 @@ func mustMarshal(t *testing.T, event *userpb.UserRegisteredEvent) []byte {
 
 func TestUserRegisteredConsumer_CreatesDriverForDriverRole(t *testing.T) {
 	repo := &fakeDriverRepository{}
-	svc := service.NewDriverService(repo)
+	svc := service.NewDriverService(repo, nil)
 	c := NewUserRegisteredConsumer(svc)
 
 	value := mustMarshal(t, &userpb.UserRegisteredEvent{UserId: "user-1", Role: "driver"})
@@ -74,7 +74,7 @@ func TestUserRegisteredConsumer_CreatesDriverForDriverRole(t *testing.T) {
 
 func TestUserRegisteredConsumer_SkipsNonDriverRole(t *testing.T) {
 	repo := &fakeDriverRepository{}
-	svc := service.NewDriverService(repo)
+	svc := service.NewDriverService(repo, nil)
 	c := NewUserRegisteredConsumer(svc)
 
 	value := mustMarshal(t, &userpb.UserRegisteredEvent{UserId: "user-1", Role: "user"})
@@ -87,7 +87,7 @@ func TestUserRegisteredConsumer_SkipsNonDriverRole(t *testing.T) {
 
 func TestUserRegisteredConsumer_IgnoresAlreadyExists(t *testing.T) {
 	repo := &fakeDriverRepository{createErr: errorsx.ErrDriverAlreadyExists}
-	svc := service.NewDriverService(repo)
+	svc := service.NewDriverService(repo, nil)
 	c := NewUserRegisteredConsumer(svc)
 
 	value := mustMarshal(t, &userpb.UserRegisteredEvent{UserId: "user-1", Role: "driver"})
@@ -102,7 +102,7 @@ func TestUserRegisteredConsumer_IgnoresAlreadyExists(t *testing.T) {
 
 func TestUserRegisteredConsumer_SkipsUnparsableMessage(t *testing.T) {
 	repo := &fakeDriverRepository{}
-	svc := service.NewDriverService(repo)
+	svc := service.NewDriverService(repo, nil)
 	c := NewUserRegisteredConsumer(svc)
 
 	c.handleMessage(context.Background(), &sarama.ConsumerMessage{Value: []byte("not-a-proto-message")})

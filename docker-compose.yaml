@@ -136,6 +136,7 @@ services:
       MONGO_DS_PASSWORD: ${MONGO_ROOT_PASSWORD:-taxi}
       JWT_SECRET: ${JWT_SECRET:-taxi}
       KAFKA_BROKERS: kafka:9092
+      ANALYTIC_SERVICE_BASE_URL: http://analytic_service:8085
     ports:
       # Host 8083, not 8081: mongo-ui already owns 8081 on the host (the
       # container itself still listens on 8081 - only the host-side
@@ -146,6 +147,8 @@ services:
         condition: service_healthy
       kafka:
         condition: service_healthy
+      analytic_service:
+        condition: service_started
   gateway_service:
     build:
       context: services/gateway_service

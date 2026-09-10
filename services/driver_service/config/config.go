@@ -8,14 +8,19 @@ import (
 )
 
 type Config struct {
-	Mongo *shared.MongoConfig
-	Host  *shared.HttpHostConfig
-	JWT   *JWTConfig
-	Kafka shared.KafkaConfig
+	Mongo           *shared.MongoConfig
+	Host            *shared.HttpHostConfig
+	JWT             *JWTConfig
+	Kafka           shared.KafkaConfig
+	AnalyticService *AnalyticServiceConfig
 }
 
 type JWTConfig struct {
 	Secret string
+}
+
+type AnalyticServiceConfig struct {
+	BaseURL string
 }
 
 func Load() *Config {
@@ -39,6 +44,9 @@ func Load() *Config {
 			Brokers:  strings.Split(shared.GetEnvFallback("KAFKA_BROKERS", "localhost:9092"), ","),
 			Username: shared.GetEnvFallback("KAFKA_USERNAME", ""),
 			Password: shared.GetEnvFallback("KAFKA_PASSWORD", ""),
+		},
+		AnalyticService: &AnalyticServiceConfig{
+			BaseURL: shared.GetEnvFallback("ANALYTIC_SERVICE_BASE_URL", "http://localhost:8085"),
 		},
 	}
 }

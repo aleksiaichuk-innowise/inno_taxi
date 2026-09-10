@@ -44,3 +44,12 @@ type Driver struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
+
+// DriverProfile is a Driver enriched with rating stats read live from
+// analytic_service - not persisted anywhere in driver_service itself, so it
+// stays a separate type rather than fields on Driver.
+type DriverProfile struct {
+	Driver
+	RatingAverage float64
+	RatingCount   int64
+}

@@ -60,8 +60,21 @@ func (f *fakeDriverRepository) FindByStatus(_ context.Context, _ service_dto.Sta
 	return f.drivers, nil
 }
 
+type fakeRatingsGateway struct {
+	average float64
+	count   int64
+	err     error
+}
+
+func (f *fakeRatingsGateway) GetDriverRatingStats(_ context.Context, _ string) (float64, int64, error) {
+	if f.err != nil {
+		return 0, 0, f.err
+	}
+	return f.average, f.count, nil
+}
+
 func TestCreateDriver_InvalidTaxiType(t *testing.T) {
-	svc := NewDriverService(&fakeDriverRepository{})
+	svc := NewDriverService(&fakeDriverRepository{}, nil)
 	_, err := svc.CreateDriver(context.Background(), &service_dto.CreateDriverInput{UserID: "u1", TaxiType: "not-real"})
 	if !errors.Is(err, errorsx.ErrInvalidTaxiType) {
 		t.Fatalf("expected ErrInvalidTaxiType, got %v", err)
@@ -69,7 +82,7 @@ func TestCreateDriver_InvalidTaxiType(t *testing.T) {
 }
 
 func TestCreateDriver_Valid(t *testing.T) {
-	svc := NewDriverService(&fakeDriverRepository{})
+	svc := NewDriverService(&fakeDriverRepository{}, nil)
 	d, err := svc.CreateDriver(context.Background(), &service_dto.CreateDriverInput{UserID: "u1", TaxiType: service_dto.TaxiTypeEconomy})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -80,7 +93,7 @@ func TestCreateDriver_Valid(t *testing.T) {
 }
 
 func TestGetDriversByStatus_InvalidStatus(t *testing.T) {
-	svc := NewDriverService(&fakeDriverRepository{})
+	svc := NewDriverService(&fakeDriverRepository{}, nil)
 	_, err := svc.GetDriversByStatus(context.Background(), "not-real")
 	if !errors.Is(err, errorsx.ErrInvalidStatus) {
 		t.Fatalf("expected ErrInvalidStatus, got %v", err)
@@ -89,7 +102,7 @@ func TestGetDriversByStatus_InvalidStatus(t *testing.T) {
 
 func TestUpdateStatusByUser_InvalidStatus(t *testing.T) {
 	repo := &fakeDriverRepository{}
-	svc := NewDriverService(repo)
+	svc := NewDriverService(repo, nil)
 	err := svc.UpdateStatusByUser(context.Background(), "u1", "not-real")
 	if !errors.Is(err, errorsx.ErrInvalidStatus) {
 		t.Fatalf("expected ErrInvalidStatus, got %v", err)
@@ -101,7 +114,7 @@ func TestUpdateStatusByUser_InvalidStatus(t *testing.T) {
 
 func TestUpdateStatusByUser_Valid(t *testing.T) {
 	repo := &fakeDriverRepository{}
-	svc := NewDriverService(repo)
+	svc := NewDriverService(repo, nil)
 	if err := svc.UpdateStatusByUser(context.Background(), "u1", service_dto.StatusAvailable); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -112,7 +125,7 @@ func TestUpdateStatusByUser_Valid(t *testing.T) {
 
 func TestUpdateTaxiTypeByUser_InvalidType(t *testing.T) {
 	repo := &fakeDriverRepository{}
-	svc := NewDriverService(repo)
+	svc := NewDriverService(repo, nil)
 	err := svc.UpdateTaxiTypeByUser(context.Background(), "u1", "not-real")
 	if !errors.Is(err, errorsx.ErrInvalidTaxiType) {
 		t.Fatalf("expected ErrInvalidTaxiType, got %v", err)
@@ -123,9 +136,45 @@ func TestUpdateTaxiTypeByUser_InvalidType(t *testing.T) {
 }
 
 func TestGetProfileByUser_NotFound(t *testing.T) {
-	svc := NewDriverService(&fakeDriverRepository{})
+	svc := NewDriverService(&fakeDriverRepository{}, nil)
 	_, err := svc.GetProfileByUser(context.Background(), "missing")
 	if !errors.Is(err, errorsx.ErrDriverNotFound) {
 		t.Fatalf("expected ErrDriverNotFound, got %v", err)
+	}
+}
+
+func TestGetProfileByUser_IncludesRatingStats(t *testing.T) {
+	driver := &service_dto.Driver{UserID: "u1", TaxiType: service_dto.TaxiTypeEconomy, Status: service_dto.StatusAvailable}
+	repo := &fakeDriverRepository{driver: driver}
+	ratings := &fakeRatingsGateway{average: 4.5, count: 12}
+	svc := NewDriverService(repo, ratings)
+
+	p, err := svc.GetProfileByUser(context.Background(), "u1")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if p.RatingAverage != 4.5 || p.RatingCount != 12 {
+		t.Fatalf("got rating (%v, %v), want (4.5, 12)", p.RatingAverage, p.RatingCount)
+	}
+	if p.UserID != "u1" {
+		t.Fatalf("expected the underlying driver fields to still be populated, got %+v", p)
+	}
+}
+
+func TestGetProfileByUser_RatingsGatewayErrorDoesNotFailProfile(t *testing.T) {
+	driver := &service_dto.Driver{UserID: "u1", TaxiType: service_dto.TaxiTypeEconomy, Status: service_dto.StatusAvailable}
+	repo := &fakeDriverRepository{driver: driver}
+	ratings := &fakeRatingsGateway{err: errors.New("analytic service unreachable")}
+	svc := NewDriverService(repo, ratings)
+
+	p, err := svc.GetProfileByUser(context.Background(), "u1")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if p.RatingAverage != 0 || p.RatingCount != 0 {
+		t.Fatalf("expected zero-value rating stats when the gateway fails, got (%v, %v)", p.RatingAverage, p.RatingCount)
+	}
+	if p.UserID != "u1" {
+		t.Fatalf("expected the profile to still be returned, got %+v", p)
 	}
 }

@@ -11,10 +11,12 @@ type OrderRepository interface {
 	GetOrderByID(ctx context.Context, id string) (service_dto.Order, error)
 	UpdateOrderStatus(ctx context.Context, id string, status service_dto.Status) (service_dto.Order, error)
 	AssignDriver(ctx context.Context, id, driverID string) (service_dto.Order, error)
+	RateOrder(ctx context.Context, id string, rating int32, comment *string) (service_dto.Order, error)
 }
 
 type OrderGateway interface {
 	PublishOrderCreated(ctx context.Context, order service_dto.Order) error
+	PublishOrderRated(ctx context.Context, order service_dto.Order) error
 }
 
 // WalletGateway is blocking by design: a charge must succeed before an

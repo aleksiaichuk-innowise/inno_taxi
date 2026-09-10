@@ -13,7 +13,7 @@ func (r PgRepository) CreateOrder(ctx context.Context, id string, priceMinorUnit
 	const query = `
 		INSERT INTO orders (id, user_id, taxi_type, start_lat, start_lng, destination_lat, destination_lng, price_minor_units)
 		VALUES (@id, @user_id, @taxi_type, @start_lat, @start_lng, @destination_lat, @destination_lng, @price_minor_units)
-		RETURNING id, user_id, driver_id, taxi_type, start_lat, start_lng, destination_lat, destination_lng, status, price_minor_units, created_at, updated_at
+		RETURNING id, user_id, driver_id, taxi_type, start_lat, start_lng, destination_lat, destination_lng, status, price_minor_units, rating, comment, created_at, updated_at
 	`
 	rows, err := r.pool.Query(ctx, query, pgx.NamedArgs{
 		"id":                id,

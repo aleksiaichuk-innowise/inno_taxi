@@ -7,14 +7,16 @@ import (
 	service_dto "github.com/aleksiaichuk-innowise/inno_taxi/services/analytic_service/entity/service"
 )
 
-// EventRepository backs ingestion for both event kinds analytic_service
-// consumes from Kafka (order_created, user_registered) - one ClickHouse
-// repository, two tables.
+// EventRepository backs ingestion for every event kind analytic_service
+// consumes from Kafka (order_created, user_registered, order_rated) - one
+// ClickHouse repository, one table per event kind.
 type EventRepository interface {
 	InsertOrderEvent(ctx context.Context, evt service_dto.OrderEvent) error
 	GetOrderStats(ctx context.Context, from, to time.Time) (service_dto.OrderStats, error)
 	GetDailyOrderCounts(ctx context.Context, from, to time.Time) ([]service_dto.DailyOrderCount, error)
 	InsertUserRegisteredEvent(ctx context.Context, evt service_dto.UserRegisteredEvent) error
+	InsertDriverRating(ctx context.Context, evt service_dto.DriverRatingEvent) error
+	GetDriverRatingStats(ctx context.Context, driverID string) (service_dto.DriverRatingStats, error)
 }
 
 type AnalyticService struct {

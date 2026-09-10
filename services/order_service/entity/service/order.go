@@ -47,6 +47,8 @@ type Order struct {
 	Destination     Location
 	Status          Status
 	PriceMinorUnits *int64
+	Rating          *int32
+	Comment         *string
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 }

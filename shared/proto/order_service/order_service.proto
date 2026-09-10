@@ -38,6 +38,8 @@ message Order {
   Status status = 7;
   int64 price_minor_units = 8;
   string created_at  = 9;
+  int32 rating = 10;
+  string comment = 11;
 }
 message CreateOrderResponse {
   Order order = 1;
@@ -64,6 +66,16 @@ message CompleteTripRequest {
 }
 
 message CompleteTripResponse {
+  Order order = 1;
+}
+
+message RateTripRequest {
+  string order_id = 1;
+  int32 rating = 2;
+  string comment = 3;
+}
+
+message RateTripResponse {
   Order order = 1;
 }
 
@@ -96,6 +108,13 @@ service OrderService {
   rpc CompleteTrip(CompleteTripRequest) returns (CompleteTripResponse) {
     option (google.api.http) = {
       post: "/v1/orders/{order_id}/complete"
+    };
+  }
+
+  rpc RateTrip(RateTripRequest) returns (RateTripResponse) {
+    option (google.api.http) = {
+      post: "/v1/orders/{order_id}/rate"
+      body: "*"
     };
   }
 }

@@ -13,6 +13,7 @@ import (
 const (
 	ConsumerGroupIDOrderCreated   = "analytic_service"
 	ConsumerGroupIDUserRegistered = "analytic_service_user_registered"
+	ConsumerGroupIDOrderRated     = "analytic_service_order_rated"
 )
 
 func NewConsumerGroup(brokers []string, groupID string) (sarama.ConsumerGroup, error) {

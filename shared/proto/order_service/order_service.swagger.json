@@ -108,6 +108,44 @@
         ]
       }
     },
+    "/v1/orders/{orderId}/rate": {
+      "post": {
+        "operationId": "OrderService_RateTrip",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1RateTripResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googleRpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/OrderServiceRateTripBody"
+            }
+          }
+        ],
+        "tags": [
+          "OrderService"
+        ]
+      }
+    },
     "/v1/orders/{orderId}/start": {
       "post": {
         "operationId": "OrderService_StartTrip",
@@ -140,6 +178,18 @@
     }
   },
   "definitions": {
+    "OrderServiceRateTripBody": {
+      "type": "object",
+      "properties": {
+        "rating": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "comment": {
+          "type": "string"
+        }
+      }
+    },
     "googleRpcStatus": {
       "type": "object",
       "properties": {
@@ -261,6 +311,21 @@
         },
         "createdAt": {
           "type": "string"
+        },
+        "rating": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "comment": {
+          "type": "string"
+        }
+      }
+    },
+    "v1RateTripResponse": {
+      "type": "object",
+      "properties": {
+        "order": {
+          "$ref": "#/definitions/v1Order"
         }
       }
     },

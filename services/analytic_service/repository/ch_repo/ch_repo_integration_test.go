@@ -177,3 +177,57 @@ func TestClickHouseRepository_InsertUserRegisteredEvent(t *testing.T) {
 		t.Fatalf("got %d rows for %s, want 1", count, evt.UserID)
 	}
 }
+
+func TestClickHouseRepository_DriverRatingStats_Last20Only(t *testing.T) {
+	ctx := t.Context()
+	driverID := "driver-rating-stats-1"
+	now := time.Now().UTC().Truncate(time.Millisecond)
+
+	// 25 ratings of 1, oldest first, then 20 ratings of 5, newest last -
+	// "last 20 trips" must mean the 20 fives, not a blend with the ones.
+	for i := 0; i < 25; i++ {
+		evt := service_dto.DriverRatingEvent{
+			OrderID:  fmt.Sprintf("%s-old-%d", driverID, i),
+			DriverID: driverID,
+			Rating:   1,
+			RatedAt:  now.Add(-time.Duration(100-i) * time.Minute),
+		}
+		if err := testRepo.InsertDriverRating(ctx, evt); err != nil {
+			t.Fatalf("insert old rating %d: %v", i, err)
+		}
+	}
+	for i := 0; i < 20; i++ {
+		evt := service_dto.DriverRatingEvent{
+			OrderID:  fmt.Sprintf("%s-recent-%d", driverID, i),
+			DriverID: driverID,
+			Rating:   5,
+			RatedAt:  now.Add(-time.Duration(20-i) * time.Minute),
+		}
+		if err := testRepo.InsertDriverRating(ctx, evt); err != nil {
+			t.Fatalf("insert recent rating %d: %v", i, err)
+		}
+	}
+
+	stats, err := testRepo.GetDriverRatingStats(ctx, driverID)
+	if err != nil {
+		t.Fatalf("get driver rating stats: %v", err)
+	}
+	if stats.Count != 20 {
+		t.Fatalf("got count %d, want 20", stats.Count)
+	}
+	if stats.Average != 5 {
+		t.Fatalf("got average %v, want 5 (the last 20 trips must exclude the older 1-star ratings)", stats.Average)
+	}
+}
+
+func TestClickHouseRepository_DriverRatingStats_NoRatings(t *testing.T) {
+	ctx := t.Context()
+
+	stats, err := testRepo.GetDriverRatingStats(ctx, "driver-with-no-ratings")
+	if err != nil {
+		t.Fatalf("get driver rating stats: %v", err)
+	}
+	if stats.Count != 0 || stats.Average != 0 {
+		t.Fatalf("got %+v, want zero value", stats)
+	}
+}

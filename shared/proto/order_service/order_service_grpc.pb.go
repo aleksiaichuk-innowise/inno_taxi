@@ -23,6 +23,7 @@ const (
 	OrderService_CancelOrder_FullMethodName  = "/order.v1.OrderService/CancelOrder"
 	OrderService_StartTrip_FullMethodName    = "/order.v1.OrderService/StartTrip"
 	OrderService_CompleteTrip_FullMethodName = "/order.v1.OrderService/CompleteTrip"
+	OrderService_RateTrip_FullMethodName     = "/order.v1.OrderService/RateTrip"
 )
 
 // OrderServiceClient is the client API for OrderService service.
@@ -33,6 +34,7 @@ type OrderServiceClient interface {
 	CancelOrder(ctx context.Context, in *CancelOrderRequest, opts ...grpc.CallOption) (*CancelOrderResponse, error)
 	StartTrip(ctx context.Context, in *StartTripRequest, opts ...grpc.CallOption) (*StartTripResponse, error)
 	CompleteTrip(ctx context.Context, in *CompleteTripRequest, opts ...grpc.CallOption) (*CompleteTripResponse, error)
+	RateTrip(ctx context.Context, in *RateTripRequest, opts ...grpc.CallOption) (*RateTripResponse, error)
 }
 
 type orderServiceClient struct {
@@ -83,6 +85,16 @@ func (c *orderServiceClient) CompleteTrip(ctx context.Context, in *CompleteTripR
 	return out, nil
 }
 
+func (c *orderServiceClient) RateTrip(ctx context.Context, in *RateTripRequest, opts ...grpc.CallOption) (*RateTripResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RateTripResponse)
+	err := c.cc.Invoke(ctx, OrderService_RateTrip_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // OrderServiceServer is the server API for OrderService service.
 // All implementations must embed UnimplementedOrderServiceServer
 // for forward compatibility.
@@ -91,6 +103,7 @@ type OrderServiceServer interface {
 	CancelOrder(context.Context, *CancelOrderRequest) (*CancelOrderResponse, error)
 	StartTrip(context.Context, *StartTripRequest) (*StartTripResponse, error)
 	CompleteTrip(context.Context, *CompleteTripRequest) (*CompleteTripResponse, error)
+	RateTrip(context.Context, *RateTripRequest) (*RateTripResponse, error)
 	mustEmbedUnimplementedOrderServiceServer()
 }
 
@@ -112,6 +125,9 @@ func (UnimplementedOrderServiceServer) StartTrip(context.Context, *StartTripRequ
 }
 func (UnimplementedOrderServiceServer) CompleteTrip(context.Context, *CompleteTripRequest) (*CompleteTripResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CompleteTrip not implemented")
+}
+func (UnimplementedOrderServiceServer) RateTrip(context.Context, *RateTripRequest) (*RateTripResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RateTrip not implemented")
 }
 func (UnimplementedOrderServiceServer) mustEmbedUnimplementedOrderServiceServer() {}
 func (UnimplementedOrderServiceServer) testEmbeddedByValue()                      {}
@@ -206,6 +222,24 @@ func _OrderService_CompleteTrip_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _OrderService_RateTrip_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RateTripRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrderServiceServer).RateTrip(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: OrderService_RateTrip_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrderServiceServer).RateTrip(ctx, req.(*RateTripRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // OrderService_ServiceDesc is the grpc.ServiceDesc for OrderService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -228,6 +262,10 @@ var OrderService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CompleteTrip",
 			Handler:    _OrderService_CompleteTrip_Handler,
+		},
+		{
+			MethodName: "RateTrip",
+			Handler:    _OrderService_RateTrip_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

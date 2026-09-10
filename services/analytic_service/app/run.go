@@ -86,6 +86,33 @@ func Run(cfg *config.Config) error {
 		}
 	}()
 
+	ratingConsumerGroup, err := appkafka.NewConsumerGroup(cfg.Kafka.Brokers, appkafka.ConsumerGroupIDOrderRated)
+	if err != nil {
+		return fmt.Errorf("new order_rated kafka consumer group: %w", err)
+	}
+	defer func() {
+		if err := ratingConsumerGroup.Close(); err != nil {
+			slog.Error("close order_rated kafka consumer group", "error", err)
+		}
+	}()
+
+	ratingConsumer := kafkahandler.NewOrderRatedConsumer(analyticSvc)
+	go func() {
+		for ctx.Err() == nil {
+			if err := ratingConsumerGroup.Consume(ctx, []string{kafkahandler.TopicOrderRated}, ratingConsumer); err != nil {
+				if errors.Is(err, context.Canceled) {
+					return
+				}
+				slog.Error("order_rated kafka consumer group session ended", "error", err)
+			}
+		}
+	}()
+	go func() {
+		for err := range ratingConsumerGroup.Errors() {
+			slog.Error("order_rated kafka consumer group error", "error", err)
+		}
+	}()
+
 	h := http_handler.NewHandler(analyticSvc)
 	app := fiber.New(fiber.Config{DisableStartupMessage: true})
 	registerRoutes(app, h)
@@ -125,4 +152,7 @@ func registerRoutes(app *fiber.App, h *http_handler.Handler) {
 	orders := app.Group("/orders")
 	orders.Get("/stats", h.GetOrderStats)
 	orders.Get("/daily", h.GetDailyOrderCounts)
+
+	ratings := app.Group("/ratings")
+	ratings.Get("/drivers/:driver_id", h.GetDriverRatingStats)
 }

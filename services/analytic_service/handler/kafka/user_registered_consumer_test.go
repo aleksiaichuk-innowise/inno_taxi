@@ -13,7 +13,8 @@ import (
 )
 
 type fakeEventRepository struct {
-	insertedUsers []service_dto.UserRegisteredEvent
+	insertedUsers   []service_dto.UserRegisteredEvent
+	insertedRatings []service_dto.DriverRatingEvent
 }
 
 func (f *fakeEventRepository) InsertOrderEvent(context.Context, service_dto.OrderEvent) error {
@@ -28,6 +29,13 @@ func (f *fakeEventRepository) GetDailyOrderCounts(context.Context, time.Time, ti
 func (f *fakeEventRepository) InsertUserRegisteredEvent(_ context.Context, evt service_dto.UserRegisteredEvent) error {
 	f.insertedUsers = append(f.insertedUsers, evt)
 	return nil
+}
+func (f *fakeEventRepository) InsertDriverRating(_ context.Context, evt service_dto.DriverRatingEvent) error {
+	f.insertedRatings = append(f.insertedRatings, evt)
+	return nil
+}
+func (f *fakeEventRepository) GetDriverRatingStats(context.Context, string) (service_dto.DriverRatingStats, error) {
+	return service_dto.DriverRatingStats{}, nil
 }
 
 func TestUserRegisteredConsumer_IngestsValidEvent(t *testing.T) {

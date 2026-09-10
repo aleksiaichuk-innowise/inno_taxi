@@ -13,7 +13,7 @@ import (
 
 func (r PgRepository) GetOrderByID(ctx context.Context, id string) (service_dto.Order, error) {
 	const query = `
-		SELECT id, user_id, driver_id, taxi_type, start_lat, start_lng, destination_lat, destination_lng, status, price_minor_units, created_at, updated_at
+		SELECT id, user_id, driver_id, taxi_type, start_lat, start_lng, destination_lat, destination_lng, status, price_minor_units, rating, comment, created_at, updated_at
 		FROM orders
 		WHERE id = @id
 	`

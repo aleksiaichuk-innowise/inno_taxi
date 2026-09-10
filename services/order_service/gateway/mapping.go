@@ -19,6 +19,28 @@ func orderCreatedEventFromOrder(order service_dto.Order) *order_service.OrderCre
 	}
 }
 
+func orderRatedEventFromOrder(order service_dto.Order) *order_service.OrderRatedEvent {
+	var driverID string
+	if order.DriverID != nil {
+		driverID = *order.DriverID
+	}
+	var rating int32
+	if order.Rating != nil {
+		rating = *order.Rating
+	}
+	var comment string
+	if order.Comment != nil {
+		comment = *order.Comment
+	}
+	return &order_service.OrderRatedEvent{
+		OrderId:  order.ID,
+		DriverId: driverID,
+		Rating:   rating,
+		Comment:  comment,
+		RatedAt:  order.UpdatedAt.Format(time.RFC3339),
+	}
+}
+
 func taxiTypeToProto(t service_dto.TaxiType) order_service.TaxiType {
 	switch t {
 	case service_dto.TaxiTypeEconomy:

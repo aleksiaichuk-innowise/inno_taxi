@@ -15,3 +15,11 @@ message OrderCreatedEvent {
   order.v1.Status status = 6;
   string created_at = 7;
 }
+
+message OrderRatedEvent {
+  string order_id = 1;
+  string driver_id = 2;
+  int32 rating = 3;
+  string comment = 4;
+  string rated_at = 5;
+}

@@ -18,7 +18,16 @@ func orderToProto(o service_dto.Order) *order_service.Order {
 		Status:          statusToProto(o.Status),
 		PriceMinorUnits: int64OrZero(o.PriceMinorUnits),
 		CreatedAt:       o.CreatedAt.Format(time.RFC3339),
+		Rating:          int32OrZero(o.Rating),
+		Comment:         stringOrEmpty(o.Comment),
 	}
+}
+
+func int32OrZero(v *int32) int32 {
+	if v == nil {
+		return 0
+	}
+	return *v
 }
 
 func taxiTypeFromProto(t order_service.TaxiType) service_dto.TaxiType {

@@ -28,6 +28,10 @@ type fakeOrderRepository struct {
 	assignDriverErr    error
 	assignDriverCalled bool
 	assignDriverArg    string
+
+	ratedOrder      *service_dto.Order
+	rateOrderErr    error
+	rateOrderCalled bool
 }
 
 func (f *fakeOrderRepository) CreateOrder(_ context.Context, id string, price int64, input service_dto.CreateOrderInput) (service_dto.Order, error) {
@@ -65,17 +69,38 @@ func (f *fakeOrderRepository) AssignDriver(_ context.Context, _, driverID string
 	return *f.assignedOrder, nil
 }
 
+func (f *fakeOrderRepository) RateOrder(_ context.Context, _ string, rating int32, comment *string) (service_dto.Order, error) {
+	f.rateOrderCalled = true
+	if f.rateOrderErr != nil {
+		return service_dto.Order{}, f.rateOrderErr
+	}
+	if f.ratedOrder != nil {
+		return *f.ratedOrder, nil
+	}
+	return service_dto.Order{Rating: &rating, Comment: comment}, nil
+}
+
 type fakeOrderGateway struct {
 	err error
 
 	called     bool
 	calledWith service_dto.Order
+
+	ratedCalled     bool
+	ratedCalledWith service_dto.Order
+	ratedErr        error
 }
 
 func (f *fakeOrderGateway) PublishOrderCreated(_ context.Context, order service_dto.Order) error {
 	f.called = true
 	f.calledWith = order
 	return f.err
+}
+
+func (f *fakeOrderGateway) PublishOrderRated(_ context.Context, order service_dto.Order) error {
+	f.ratedCalled = true
+	f.ratedCalledWith = order
+	return f.ratedErr
 }
 
 type fakeWalletGateway struct {

@@ -74,3 +74,65 @@ func TestKafkaGateway_PublishOrderCreated_ReturnsProducerError(t *testing.T) {
 		t.Fatalf("PublishOrderCreated() error = %v, want wrapping %v", err, wantErr)
 	}
 }
+
+func TestKafkaGateway_PublishOrderRated_Succeeds(t *testing.T) {
+	rating := int32(5)
+	driverID := "driver-1"
+	order := service_dto.Order{
+		ID:       "order-1",
+		DriverID: &driverID,
+		Rating:   &rating,
+	}
+
+	producer := mocks.NewSyncProducer(t, nil)
+	producer.ExpectSendMessageWithMessageCheckerFunctionAndSucceed(func(msg *sarama.ProducerMessage) error {
+		if msg.Topic != topicOrderRated {
+			return errors.New("unexpected topic: " + msg.Topic)
+		}
+		value, err := msg.Value.Encode()
+		if err != nil {
+			return err
+		}
+		var event order_service.OrderRatedEvent
+		if err := proto.Unmarshal(value, &event); err != nil {
+			return err
+		}
+		if event.GetOrderId() != order.ID {
+			return errors.New("unexpected order id in payload: " + event.GetOrderId())
+		}
+		if event.GetDriverId() != driverID {
+			return errors.New("unexpected driver id in payload: " + event.GetDriverId())
+		}
+		if event.GetRating() != 5 {
+			return errors.New("unexpected rating in payload")
+		}
+		return nil
+	})
+	defer func() {
+		if err := producer.Close(); err != nil {
+			t.Fatalf("close producer: %v", err)
+		}
+	}()
+
+	gw := NewKafkaGateway(producer)
+	if err := gw.PublishOrderRated(context.Background(), order); err != nil {
+		t.Fatalf("PublishOrderRated() error = %v, want nil", err)
+	}
+}
+
+func TestKafkaGateway_PublishOrderRated_ReturnsProducerError(t *testing.T) {
+	producer := mocks.NewSyncProducer(t, nil)
+	wantErr := errors.New("broker unreachable")
+	producer.ExpectSendMessageAndFail(wantErr)
+	defer func() {
+		if err := producer.Close(); err != nil {
+			t.Fatalf("close producer: %v", err)
+		}
+	}()
+
+	gw := NewKafkaGateway(producer)
+	err := gw.PublishOrderRated(context.Background(), service_dto.Order{ID: "order-1"})
+	if !errors.Is(err, wantErr) {
+		t.Fatalf("PublishOrderRated() error = %v, want wrapping %v", err, wantErr)
+	}
+}

@@ -17,6 +17,8 @@ type Order struct {
 	DestinationLng  float64   `db:"destination_lng"`
 	Status          string    `db:"status"`
 	PriceMinorUnits *int64    `db:"price_minor_units"`
+	Rating          *int32    `db:"rating"`
+	Comment         *string   `db:"comment"`
 	CreatedAt       time.Time `db:"created_at"`
 	UpdatedAt       time.Time `db:"updated_at"`
 }
@@ -31,6 +33,8 @@ func (r Order) ToDomain() service.Order {
 		Destination:     service.Location{Lat: r.DestinationLat, Lng: r.DestinationLng},
 		Status:          service.Status(r.Status),
 		PriceMinorUnits: r.PriceMinorUnits,
+		Rating:          r.Rating,
+		Comment:         r.Comment,
 		CreatedAt:       r.CreatedAt,
 		UpdatedAt:       r.UpdatedAt,
 	}

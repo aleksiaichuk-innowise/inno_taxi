@@ -113,6 +113,82 @@ func (x *OrderCreatedEvent) GetCreatedAt() string {
 	return ""
 }
 
+type OrderRatedEvent struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	OrderId       string                 `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	DriverId      string                 `protobuf:"bytes,2,opt,name=driver_id,json=driverId,proto3" json:"driver_id,omitempty"`
+	Rating        int32                  `protobuf:"varint,3,opt,name=rating,proto3" json:"rating,omitempty"`
+	Comment       string                 `protobuf:"bytes,4,opt,name=comment,proto3" json:"comment,omitempty"`
+	RatedAt       string                 `protobuf:"bytes,5,opt,name=rated_at,json=ratedAt,proto3" json:"rated_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *OrderRatedEvent) Reset() {
+	*x = OrderRatedEvent{}
+	mi := &file_shared_proto_order_service_kafka_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *OrderRatedEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OrderRatedEvent) ProtoMessage() {}
+
+func (x *OrderRatedEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_shared_proto_order_service_kafka_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OrderRatedEvent.ProtoReflect.Descriptor instead.
+func (*OrderRatedEvent) Descriptor() ([]byte, []int) {
+	return file_shared_proto_order_service_kafka_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *OrderRatedEvent) GetOrderId() string {
+	if x != nil {
+		return x.OrderId
+	}
+	return ""
+}
+
+func (x *OrderRatedEvent) GetDriverId() string {
+	if x != nil {
+		return x.DriverId
+	}
+	return ""
+}
+
+func (x *OrderRatedEvent) GetRating() int32 {
+	if x != nil {
+		return x.Rating
+	}
+	return 0
+}
+
+func (x *OrderRatedEvent) GetComment() string {
+	if x != nil {
+		return x.Comment
+	}
+	return ""
+}
+
+func (x *OrderRatedEvent) GetRatedAt() string {
+	if x != nil {
+		return x.RatedAt
+	}
+	return ""
+}
+
 var File_shared_proto_order_service_kafka_proto protoreflect.FileDescriptor
 
 const file_shared_proto_order_service_kafka_proto_rawDesc = "" +
@@ -126,7 +202,13 @@ const file_shared_proto_order_service_kafka_proto_rawDesc = "" +
 	"\vdestination\x18\x05 \x01(\v2\x12.order.v1.LocationR\vdestination\x12(\n" +
 	"\x06status\x18\x06 \x01(\x0e2\x10.order.v1.StatusR\x06status\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\a \x01(\tR\tcreatedAtBUZSgithub.com/aleksiaichuk-innowise/inno_taxi/shared/proto/order_service;order_serviceb\x06proto3"
+	"created_at\x18\a \x01(\tR\tcreatedAt\"\x96\x01\n" +
+	"\x0fOrderRatedEvent\x12\x19\n" +
+	"\border_id\x18\x01 \x01(\tR\aorderId\x12\x1b\n" +
+	"\tdriver_id\x18\x02 \x01(\tR\bdriverId\x12\x16\n" +
+	"\x06rating\x18\x03 \x01(\x05R\x06rating\x12\x18\n" +
+	"\acomment\x18\x04 \x01(\tR\acomment\x12\x19\n" +
+	"\brated_at\x18\x05 \x01(\tR\aratedAtBUZSgithub.com/aleksiaichuk-innowise/inno_taxi/shared/proto/order_service;order_serviceb\x06proto3"
 
 var (
 	file_shared_proto_order_service_kafka_proto_rawDescOnce sync.Once
@@ -140,18 +222,19 @@ func file_shared_proto_order_service_kafka_proto_rawDescGZIP() []byte {
 	return file_shared_proto_order_service_kafka_proto_rawDescData
 }
 
-var file_shared_proto_order_service_kafka_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_shared_proto_order_service_kafka_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_shared_proto_order_service_kafka_proto_goTypes = []any{
 	(*OrderCreatedEvent)(nil), // 0: order.kafka.v1.OrderCreatedEvent
-	(TaxiType)(0),             // 1: order.v1.TaxiType
-	(*Location)(nil),          // 2: order.v1.Location
-	(Status)(0),               // 3: order.v1.Status
+	(*OrderRatedEvent)(nil),   // 1: order.kafka.v1.OrderRatedEvent
+	(TaxiType)(0),             // 2: order.v1.TaxiType
+	(*Location)(nil),          // 3: order.v1.Location
+	(Status)(0),               // 4: order.v1.Status
 }
 var file_shared_proto_order_service_kafka_proto_depIdxs = []int32{
-	1, // 0: order.kafka.v1.OrderCreatedEvent.taxi_type:type_name -> order.v1.TaxiType
-	2, // 1: order.kafka.v1.OrderCreatedEvent.pickup:type_name -> order.v1.Location
-	2, // 2: order.kafka.v1.OrderCreatedEvent.destination:type_name -> order.v1.Location
-	3, // 3: order.kafka.v1.OrderCreatedEvent.status:type_name -> order.v1.Status
+	2, // 0: order.kafka.v1.OrderCreatedEvent.taxi_type:type_name -> order.v1.TaxiType
+	3, // 1: order.kafka.v1.OrderCreatedEvent.pickup:type_name -> order.v1.Location
+	3, // 2: order.kafka.v1.OrderCreatedEvent.destination:type_name -> order.v1.Location
+	4, // 3: order.kafka.v1.OrderCreatedEvent.status:type_name -> order.v1.Status
 	4, // [4:4] is the sub-list for method output_type
 	4, // [4:4] is the sub-list for method input_type
 	4, // [4:4] is the sub-list for extension type_name
@@ -171,7 +254,7 @@ func file_shared_proto_order_service_kafka_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_shared_proto_order_service_kafka_proto_rawDesc), len(file_shared_proto_order_service_kafka_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   1,
+			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

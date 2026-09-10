@@ -10,4 +10,7 @@ var (
 	ErrOrderNotCancellable = errors.New("order is not cancellable")
 	ErrOrderNotStartable   = errors.New("order is not startable")
 	ErrOrderNotCompletable = errors.New("order is not completable")
+	ErrOrderNotRatable     = errors.New("order is not ratable")
+	ErrOrderAlreadyRated   = errors.New("order is already rated")
+	ErrInvalidRating       = errors.New("rating must be between 1 and 5")
 )

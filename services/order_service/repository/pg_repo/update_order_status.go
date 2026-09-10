@@ -16,7 +16,7 @@ func (r PgRepository) UpdateOrderStatus(ctx context.Context, id string, status s
 		UPDATE orders
 		SET status = @status, updated_at = now()
 		WHERE id = @id
-		RETURNING id, user_id, driver_id, taxi_type, start_lat, start_lng, destination_lat, destination_lng, status, price_minor_units, created_at, updated_at
+		RETURNING id, user_id, driver_id, taxi_type, start_lat, start_lng, destination_lat, destination_lng, status, price_minor_units, rating, comment, created_at, updated_at
 	`
 	rows, err := r.pool.Query(ctx, query, pgx.NamedArgs{
 		"id":     id,

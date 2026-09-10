@@ -36,6 +36,33 @@ func TestIngestUserRegisteredEvent(t *testing.T) {
 	}
 }
 
+func TestIngestDriverRating(t *testing.T) {
+	repo := &fakeOrderEventRepository{}
+	svc := NewAnalyticService(repo)
+
+	evt := service_dto.DriverRatingEvent{OrderID: "order-1", DriverID: "driver-1", Rating: 5, RatedAt: time.Now()}
+	if err := svc.IngestDriverRating(context.Background(), evt); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(repo.insertedRatings) != 1 || repo.insertedRatings[0].DriverID != "driver-1" {
+		t.Fatalf("expected the rating to be inserted, got %+v", repo.insertedRatings)
+	}
+}
+
+func TestGetDriverRatingStats_DelegatesToRepo(t *testing.T) {
+	want := service_dto.DriverRatingStats{Average: 4.5, Count: 20}
+	repo := &fakeOrderEventRepository{ratingStats: want}
+	svc := NewAnalyticService(repo)
+
+	got, err := svc.GetDriverRatingStats(context.Background(), "driver-1")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got != want {
+		t.Fatalf("got %+v, want %+v", got, want)
+	}
+}
+
 func TestGetOrderStats_InvalidRange(t *testing.T) {
 	repo := &fakeOrderEventRepository{}
 	svc := NewAnalyticService(repo)

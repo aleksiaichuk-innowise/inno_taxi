@@ -14,6 +14,7 @@ import (
 // caller (HTTP handler) uses it to choose between 201 and 200.
 func (s *WalletService) Charge(ctx context.Context, userID string, amountMinorUnits int64, referenceID string) (service_dto.Transaction, bool, error) {
 	if amountMinorUnits <= 0 {
+		slog.WarnContext(ctx, "wallet charge rejected", "user_id", userID, "reference_id", referenceID, "amount_minor_units", amountMinorUnits, "reason", errorsx.ErrInvalidAmount)
 		return service_dto.Transaction{}, false, errorsx.ErrInvalidAmount
 	}
 
@@ -49,8 +50,11 @@ func (s *WalletService) Charge(ctx context.Context, userID string, amountMinorUn
 		return nil
 	})
 	if err != nil {
+		slog.WarnContext(ctx, "wallet charge rejected", "user_id", userID, "reference_id", referenceID, "amount_minor_units", amountMinorUnits, "reason", err)
 		return service_dto.Transaction{}, false, err
 	}
+
+	slog.InfoContext(ctx, "wallet charge recorded", "wallet_id", result.WalletID, "reference_id", referenceID, "amount_minor_units", amountMinorUnits, "replay", !created)
 
 	if created {
 		if err := s.cache.Invalidate(ctx, result.WalletID); err != nil {

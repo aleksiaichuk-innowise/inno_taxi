@@ -13,6 +13,7 @@ import (
 // contract as Charge.
 func (s *WalletService) Refund(ctx context.Context, userID string, amountMinorUnits int64, referenceID string) (service_dto.Transaction, bool, error) {
 	if amountMinorUnits <= 0 {
+		slog.WarnContext(ctx, "wallet refund rejected", "user_id", userID, "reference_id", referenceID, "amount_minor_units", amountMinorUnits, "reason", errorsx.ErrInvalidAmount)
 		return service_dto.Transaction{}, false, errorsx.ErrInvalidAmount
 	}
 
@@ -44,8 +45,11 @@ func (s *WalletService) Refund(ctx context.Context, userID string, amountMinorUn
 		return nil
 	})
 	if err != nil {
+		slog.WarnContext(ctx, "wallet refund rejected", "user_id", userID, "reference_id", referenceID, "amount_minor_units", amountMinorUnits, "reason", err)
 		return service_dto.Transaction{}, false, err
 	}
+
+	slog.InfoContext(ctx, "wallet refund recorded", "wallet_id", result.WalletID, "reference_id", referenceID, "amount_minor_units", amountMinorUnits, "replay", !created)
 
 	if created {
 		if err := s.cache.Invalidate(ctx, result.WalletID); err != nil {

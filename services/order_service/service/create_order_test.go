@@ -245,7 +245,10 @@ func TestCreateOrder_ChargesBeforePersisting(t *testing.T) {
 	if !wallet.chargeCalled {
 		t.Fatal("expected wallet.Charge to be called")
 	}
-	if wallet.chargeArgs[0] != "user-1" || wallet.chargeArgs[1] != priceComfortMinorUnits {
+	input := validInput()
+	wantPrice := priceForTrip(input.TaxiType, input.Start, input.Destination)
+
+	if wallet.chargeArgs[0] != "user-1" || wallet.chargeArgs[1] != wantPrice {
 		t.Fatalf("unexpected charge args: %+v", wallet.chargeArgs)
 	}
 	if !repo.createCalled {
@@ -257,8 +260,8 @@ func TestCreateOrder_ChargesBeforePersisting(t *testing.T) {
 	if repo.calledWithID != wallet.chargeArgs[2] {
 		t.Fatalf("expected the charge reference ID to match the order ID passed to the repository: charge=%v repo=%v", wallet.chargeArgs[2], repo.calledWithID)
 	}
-	if repo.calledWithPrice != priceComfortMinorUnits {
-		t.Fatalf("got price %d, want %d", repo.calledWithPrice, priceComfortMinorUnits)
+	if repo.calledWithPrice != wantPrice {
+		t.Fatalf("got price %d, want %d", repo.calledWithPrice, wantPrice)
 	}
 }
 

@@ -25,7 +25,7 @@ func (s OrderService) CreateOrder(ctx context.Context, input service_dto.CreateO
 	if err != nil {
 		return service_dto.Order{}, fmt.Errorf("generate order id: %w", err)
 	}
-	price := priceForTaxiType(input.TaxiType)
+	price := priceForTrip(input.TaxiType, input.Start, input.Destination)
 
 	if err := s.wallet.Charge(ctx, input.UserID, price, orderID.String()); err != nil {
 		return service_dto.Order{}, err

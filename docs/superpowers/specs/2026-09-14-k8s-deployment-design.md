@@ -102,16 +102,30 @@ exposing its container port. `gateway-service`'s `Deployment` is the same
 shape but built from `services/gateway_service`'s own Dockerfile/context
 (it has no Go module, no `shared` dependency).
 
-**One application-code change is required, not just new manifests:**
-`services/gateway_service/nginx.conf:18` hardcodes
-`resolver 127.0.0.11 valid=10s;` — `127.0.0.11` is Docker Compose's embedded
-per-network DNS server, which does not exist inside a Kubernetes pod.
-Without changing this, `gateway_service` cannot resolve any of the other
-6 services' Service names at all. It must become the cluster's DNS Service
-IP. k3s's default service CIDR is `10.43.0.0/16`, which deterministically
-assigns CoreDNS (`kube-dns` Service) the ClusterIP `10.43.0.10` — since this
-deploy targets k3s specifically (not an arbitrary cluster), that constant is
-knowable ahead of time rather than something to discover at runtime.
+**Two application-code changes are required, not just new manifests —
+both confined to `services/gateway_service/nginx.conf`:**
+
+1. Line 18 hardcodes `resolver 127.0.0.11 valid=10s;` — `127.0.0.11` is
+   Docker Compose's embedded per-network DNS server, which does not exist
+   inside a Kubernetes pod. It must become the cluster's DNS Service IP.
+   k3s's default service CIDR is `10.43.0.0/16`, which deterministically
+   assigns CoreDNS (the `kube-dns` Service) the ClusterIP `10.43.0.10` —
+   since this deploy targets k3s specifically (not an arbitrary cluster),
+   that constant is knowable ahead of time rather than something to
+   discover at runtime.
+2. 18 `set $<name>_service "<name>_service:<port>";` lines hardcode
+   underscored hostnames (`auth_service:8082`, `user_service:8080`,
+   `driver_service:8081`, `order_service:8080`, `analytic_service:8085`) —
+   these match the Docker Compose container names exactly today, but a
+   Kubernetes `Service` name must be a valid DNS-1035 label
+   (`[a-z]([-a-z0-9]*[a-z0-9])?`) and **cannot contain underscores**. Every
+   one of these literals must change to the hyphenated form (`auth-service`,
+   `user-service`, `driver-service`, `order-service`, `analytic-service`) to
+   match the `Service` names this chart creates — the port numbers are
+   unaffected.
+
+Without both fixes, `gateway_service` cannot resolve — or even name — any
+of the other 6 services once deployed to Kubernetes.
 
 ## Stateful Dependencies
 

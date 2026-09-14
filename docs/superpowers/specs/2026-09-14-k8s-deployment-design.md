@@ -102,6 +102,17 @@ exposing its container port. `gateway-service`'s `Deployment` is the same
 shape but built from `services/gateway_service`'s own Dockerfile/context
 (it has no Go module, no `shared` dependency).
 
+**One application-code change is required, not just new manifests:**
+`services/gateway_service/nginx.conf:18` hardcodes
+`resolver 127.0.0.11 valid=10s;` — `127.0.0.11` is Docker Compose's embedded
+per-network DNS server, which does not exist inside a Kubernetes pod.
+Without changing this, `gateway_service` cannot resolve any of the other
+6 services' Service names at all. It must become the cluster's DNS Service
+IP. k3s's default service CIDR is `10.43.0.0/16`, which deterministically
+assigns CoreDNS (`kube-dns` Service) the ClusterIP `10.43.0.10` — since this
+deploy targets k3s specifically (not an arbitrary cluster), that constant is
+knowable ahead of time rather than something to discover at runtime.
+
 ## Stateful Dependencies
 
 Each of the 7 infra dependencies becomes a `StatefulSet` (stable pod

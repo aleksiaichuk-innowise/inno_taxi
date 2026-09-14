@@ -85,7 +85,7 @@ deploy/helm/inno-taxi/
       analytic-service.yaml
       gateway-service.yaml
     infra/
-      postgres-order.yaml        # StatefulSet + headless Service + volumeClaimTemplate
+      postgres-order.yaml        # StatefulSet + ClusterIP Service + volumeClaimTemplate
       postgres-wallet.yaml
       mongo.yaml
       redis.yaml
@@ -107,8 +107,14 @@ shape but built from `services/gateway_service`'s own Dockerfile/context
 Each of the 7 infra dependencies becomes a `StatefulSet` (stable pod
 identity + a `PersistentVolumeClaim` that survives pod restarts, unlike a
 bare `Deployment` where replacement pods get fresh, unrelated storage) with
-one replica, plus a headless `Service` (`clusterIP: None`) for stable
-per-pod DNS. Configuration mirrors `docker-compose.yaml` 1:1:
+one replica, plus a normal `ClusterIP` `Service` in front of it. A headless
+`Service` (`clusterIP: None`, giving per-pod DNS like `kafka-0.kafka`) is
+the idiomatic choice for a *multi-replica* StatefulSet where clients need to
+address a specific ordinal — with exactly one replica everywhere here, a
+plain `ClusterIP` `Service` is just as stable and lets every dependency keep
+the same hostname `docker-compose.yaml` already uses (`kafka:9092`,
+`postgres-order:5432`, ...), so env vars need no k8s-specific rewriting.
+Configuration mirrors `docker-compose.yaml` 1:1:
 
 | Dependency | Source of truth today | k8s-specific adjustment |
 |---|---|---|
@@ -116,7 +122,7 @@ per-pod DNS. Configuration mirrors `docker-compose.yaml` 1:1:
 | `postgres-wallet` | `docker-compose.yaml`'s `wallet_postgres` | Same as above, separate PVC |
 | `mongo` | `docker-compose.yaml`'s `mongo` | `mongo:7`, root creds from Secret |
 | `redis` | `docker-compose.yaml`'s `redis` | `redis:7-alpine`, no changes needed |
-| `kafka` | `docker-compose.yaml`'s `kafka` (KRaft mode, broker+controller combined, node ID 1) | `KAFKA_ADVERTISED_LISTENERS` is currently `kafka:9092` (the compose container name); in k8s this becomes the pod's stable DNS name via the headless Service: `kafka-0.kafka:9092` |
+| `kafka` | `docker-compose.yaml`'s `kafka` (KRaft mode, broker+controller combined, node ID 1) | `KAFKA_ADVERTISED_LISTENERS` stays `PLAINTEXT://kafka:9092` unchanged — the `Service` name `kafka` resolves the same way a compose container name does |
 | `clickhouse` | `docker-compose.yaml`'s `clickhouse` + `services/analytic_service/clickhouse-listen-ipv4.xml` bind mount | The IPv4-only `config.d` override becomes a `ConfigMap` mounted at `/etc/clickhouse-server/config.d/listen-ipv4.xml` instead of a bind mount |
 | `elasticsearch` | `docker-compose.yaml`'s `elasticsearch` (`discovery.type=single-node`, `xpack.security.enabled=false`) | Same env; additionally needs the host kernel's `vm.max_map_count >= 262144` (see VPS Bootstrap) or the pod crash-loops on startup |
 

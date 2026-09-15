@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analytic-service
+  labels:
+    {{ include "inno-taxi.labels" . | nindent 4}}
+    app.kubernetes.io/component: analytic-service
+spec:
+  selector:
+    matchLabels:
+      {{ include "inno-taxi.selectorLabels" . | nindent 6}}
+      app.kubernetes.io/component: analytic-service
+  template:
+    metadata:
+      labels:
+        {{ include "inno-taxi.selectorLabels" . | nindent 8}}
+        app.kubernetes.io/component: analytic-service
+    spec:
+      containers:
+        - name: analytic-service
+          image: "{{ .Values.image.registry }}/analytic-service:{{ .Values.image.tag }}"
+          ports:
+            - containerPort: 8085
+          env:
+            - name: HTTP_ANALYTIC_HOST
+              value: "0.0.0.0"
+            - name: HTTP_ANALYTIC_PORT
+              value: "8085"
+            - name: KAFKA_BROKERS
+              value: "kafka:9092"
+            - name: CLICKHOUSE_ADDR
+              value: "clickhouse:9000"
+            - name: CLICKHOUSE_DATABASE
+              value: analytics
+            - name: CLICKHOUSE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "inno-taxi.fullname" . }}-secrets
+                  key: clickhouseUsername
+            - name: CLICKHOUSE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "inno-taxi.fullname" . }}-secrets
+                  key: clickhousePassword
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: analytic-service
+  labels:
+    {{ include "inno-taxi.labels" . | nindent 4}}
+    app.kubernetes.io/component: analytic-service
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8085
+      targetPort: 8085
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "inno-taxi.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: analytic-service

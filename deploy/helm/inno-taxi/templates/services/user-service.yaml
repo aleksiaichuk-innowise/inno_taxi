@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  labels:
+    {{ include "inno-taxi.labels" . | nindent 4}}
+    app.kubernetes.io/component: user-service
+spec:
+  selector:
+    matchLabels:
+      {{ include "inno-taxi.selectorLabels" . | nindent 6}}
+      app.kubernetes.io/component: user-service
+  template:
+    metadata:
+      labels:
+        {{ include "inno-taxi.selectorLabels" . | nindent 8}}
+        app.kubernetes.io/component: user-service
+    spec:
+      containers:
+        - name: user-service
+          image: "{{ .Values.image.registry}}/user-service:{{ .Values.image.tag}}"
+          ports:
+            - containerPort: 8080
+          env:
+            - name: HTTP_US_HOST
+              value: "0.0.0.0"
+            - name: HTTP_US_PORT
+              value: "8080"
+            - name: MONGO_US_HOST
+              value: mongo
+            - name: MONGO_US_PORT
+              value: "27017"
+            - name: MONGO_US_DB
+              value: taxi
+            - name: MONGO_US_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "inno-taxi.fullname" . }}-secrets
+                  key: mongoRootUser
+            - name: MONGO_US_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "inno-taxi.fullname" . }}-secrets
+                  key: mongoRootPassword
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "inno-taxi.fullname" . }}-secrets
+                  key: jwtSecret
+            - name: KAFKA_BROKERS
+              value: "kafka:9092"
+
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+  labels:
+    {{ include "inno-taxi.labels" . | nindent 4}}
+    app.kubernetes.io/component: user-service
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "inno-taxi.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: user-service
+
+
+
+
+
+

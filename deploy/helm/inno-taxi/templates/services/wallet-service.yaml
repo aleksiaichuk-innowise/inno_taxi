@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wallet-service
+  labels:
+    {{ include "inno-taxi.labels" . | nindent 4}}
+    app.kubernetes.io/component: wallet-service
+spec:
+  selector:
+    matchLabels:
+      {{ include "inno-taxi.selectorLabels" . | nindent 6}}
+      app.kubernetes.io/component: wallet-service
+  template:
+    metadata:
+      labels:
+        {{ include "inno-taxi.selectorLabels" . | nindent 8}}
+        app.kubernetes.io/component: wallet-service
+    spec:
+      containers:
+        - name: wallet-service
+          image: "{{ .Values.image.registry }}/wallet-service:{{ .Values.image.tag }}"
+          ports:
+            - containerPort: 8084
+          env:
+            - name: HTTP_WALLET_HOST
+              value: "0.0.0.0"
+            - name: HTTP_WALLET_PORT
+              value: "8084"
+            - name: PG_WALLET_HOST
+              value: postgres-wallet
+            - name: PG_WALLET_PORT
+              value: "5432"
+            - name: PG_WALLET_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "inno-taxi.fullname" . }}-secrets
+                  key: pgWalletUser
+            - name: PG_WALLET_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "inno-taxi.fullname" . }}-secrets
+                  key: pgWalletPass
+            - name: PG_WALLET_DATABASE
+              value: wallet
+            - name: REDIS_ADDR
+              value: "redis:6379"
+            - name: KAFKA_BROKERS
+              value: "kafka:9092"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wallet-service
+  labels:
+    {{ include "inno-taxi.labels" . | nindent 4}}
+    app.kubernetes.io/component: wallet-service
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8084
+      targetPort: 8084
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "inno-taxi.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: wallet-service

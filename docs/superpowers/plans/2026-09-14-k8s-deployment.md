@@ -30,6 +30,16 @@ cert-manager + Let's Encrypt, GitHub Actions, `ghcr.io`.
 - Every k8s object name uses hyphens, never underscores (k8s `Service`
   names are DNS-1035 labels — underscores are invalid there even though
   Docker Compose's container names use them).
+- Every `Deployment`/`StatefulSet`/`Service` name is the **bare literal**
+  name (`auth-service`, `redis`, `postgres-order`, ...) — never run through
+  the `inno-taxi.fullname` helper. A `Service`'s `metadata.name` *is* its
+  DNS hostname, and every env var and `gateway_service/nginx.conf` literal
+  in this plan already hardcodes these bare names with no release prefix —
+  fullname-prefixing would silently break every one of them. (This is
+  fine because the chart only ever runs as a single instance — no
+  multi-release-per-namespace scenario to avoid name collisions for.) The
+  fullname helper is still correct for the one resource nothing else
+  addresses by name: the `Secret` from Task 2.
 - All 14 workloads (7 services + 7 stateful deps) run **1 replica** — no
   HA, no autoscaling (Non-Goals in the spec).
 - Stateful deps use a plain `ClusterIP` `Service` (not headless) — single
@@ -135,9 +145,9 @@ whichever Kubernetes intro material you're using.
 - `deploy/helm/inno-taxi/templates/services/auth-service.yaml`
 
 **Requirements — this is the pattern every later service task repeats:**
-- `Deployment` named `auth-service` (via the fullname helper, so the
-  rendered name is `<release>-auth-service` — same pattern for every
-  service in this and later tasks), 1 replica, one container:
+- `Deployment` named `auth-service` — the bare literal name, **not** run
+  through the `inno-taxi.fullname` helper (see Global Constraints: only
+  the Task 2 `Secret` uses that helper) — 1 replica, one container:
   - image: `{{ .Values.image.registry }}/auth-service:{{ .Values.image.tag }}`
   - container port: `8082`
   - env vars (name → value; `<from secret:X>` means `valueFrom.secretKeyRef`

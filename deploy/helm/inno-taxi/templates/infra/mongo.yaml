@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongo
+  labels:
+    {{- include "inno-taxi.labels" . | nindent 4}}
+    app.kubernetes.io/component: mongo
+spec:
+  serviceName: mongo
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "inno-taxi.labels" . | nindent 6}}
+      app.kubernetes.io/component: mongo
+  template:
+    metadata:
+      name: mongo
+      labels:
+        {{- include "inno-taxi.labels" . | nindent 8}}
+        app.kubernetes.io/component: mongo
+    spec:
+      containers:
+        - name: mongo
+          image: mongo:7
+          ports:
+            - containerPort: 27017
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "inno-taxi.fullname" . }}-secrets
+                  key: mongoRootUser
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "inno-taxi.fullname" . }}-secrets
+                  key: mongoRootPassword
+          volumeMounts:
+            - mountPath: /data/db
+              name: mongo-data
+
+  volumeClaimTemplates:
+    - metadata:
+        name: mongo-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo
+  labels:
+    {{- include "inno-taxi.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mongo
+spec:
+  type: ClusterIP
+  ports:
+    - port: 27017
+      targetPort: 27017
+      protocol: TCP
+      name: mongo
+  selector:
+    {{- include "inno-taxi.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: mongo

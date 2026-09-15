@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres-order
+  labels:
+    {{- include "inno-taxi.labels" . | nindent 4 }}
+    app.kubernetes.io/component: postgres-order
+spec:
+  serviceName: postgres-order
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "inno-taxi.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: postgres-order
+  template:
+    metadata:
+      labels:
+        {{- include "inno-taxi.labels" . | nindent 8 }}
+        app.kubernetes.io/component: postgres-order
+    spec:
+      containers:
+        - name: postgres-order
+          image: postgres:18
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "inno-taxi.fullname" . }}-secrets
+                  key: pgOrderUser
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "inno-taxi.fullname" . }}-secrets
+                  key: pgOrderPass
+            - name: POSTGRES_DB
+              value: "order"
+          volumeMounts:
+            - name: postgres-order-data
+              mountPath: /var/lib/postgresql
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-order-data
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-order
+  labels:
+    {{- include "inno-taxi.labels" . | nindent 4 }}
+    app.kubernetes.io/component: postgres-order
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5432
+      targetPort: 5432
+      protocol: TCP
+      name: postgres
+  selector:
+    {{- include "inno-taxi.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: postgres-order

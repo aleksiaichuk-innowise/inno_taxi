@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres-wallet
+  labels:
+    {{- include "inno-taxi.labels" . | nindent 4 }}
+    app.kubernetes.io/component: postgres-wallet
+spec:
+  serviceName: postgres-wallet
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "inno-taxi.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: postgres-wallet
+  template:
+    metadata:
+      labels:
+        {{- include "inno-taxi.labels" . | nindent 8 }}
+        app.kubernetes.io/component: postgres-wallet
+    spec:
+      containers:
+        - name: postgres-wallet
+          image: postgres:18
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "inno-taxi.fullname" . }}-secrets
+                  key:  pgWalletUser
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "inno-taxi.fullname" . }}-secrets
+                  key: pgWalletPass
+            - name: POSTGRES_DB
+              value: "wallet"
+          volumeMounts:
+            - name: postgres-wallet-data
+              mountPath: /var/lib/postgresql
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-wallet-data
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-wallet
+  labels:
+    {{- include "inno-taxi.labels" . | nindent 4 }}
+    app.kubernetes.io/component: postgres-wallet
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5432
+      targetPort: 5432
+      protocol: TCP
+      name: postgres
+  selector:
+    {{- include "inno-taxi.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: postgres-wallet

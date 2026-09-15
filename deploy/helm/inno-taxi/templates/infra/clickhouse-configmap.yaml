@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: clickhouse-listen-ipv4
+  labels:
+    {{- include "inno-taxi.labels" . | nindent 4 }}
+    app.kubernetes.io/component: clickhouse
+data:
+  listen-ipv4.xml: |
+    <clickhouse>
+        <listen_host>0.0.0.0</listen_host>
+    </clickhouse>

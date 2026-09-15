@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service
+  labels:
+    {{ include "inno-taxi.labels" . | nindent 4}}
+    app.kubernetes.io/component: auth-service
+spec:
+  selector:
+    matchLabels:
+      {{ include "inno-taxi.selectorLabels" . | nindent 6}}
+      app.kubernetes.io/component: auth-service
+  template:
+    metadata:
+      labels:
+        {{ include "inno-taxi.selectorLabels" . | nindent 8}}
+        app.kubernetes.io/component: auth-service
+    spec:
+      containers:
+        - name: auth-service
+          image: "{{ .Values.image.registry}}/auth-service:{{ .Values.image.tag}}"
+          ports:
+            - containerPort: 8082
+          env:
+            - name: HTTP_AUTH_HOST
+              value: "0.0.0.0"
+            - name: HTTP_AUTH_PORT
+              value: "8082"
+            - name: REDIS_ADDR
+              value: "redis:6379"
+            - name: USER_SERVICE_BASE_URL
+              value: "http://user-service:8080"
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "inno-taxi.fullname" . }}-secrets
+                  key: jwtSecret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+  labels:
+    {{ include "inno-taxi.labels" . | nindent 4}}
+    app.kubernetes.io/component: auth-service
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8082
+      targetPort: 8082
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "inno-taxi.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: auth-service
+
+
+
+
+
+

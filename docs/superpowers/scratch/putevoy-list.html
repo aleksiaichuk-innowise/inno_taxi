@@ -1,0 +1,576 @@
+<title>Путевой лист</title>
+<style>
+  :root {
+    --paper: #f4efe1;
+    --paper-raised: #ece4d0;
+    --ink: #241f16;
+    --ink-dim: #5a5140;
+    --rule: #cdc0a0;
+    --accent: #1f5754;
+    --accent-ink: #eef6f4;
+    --done: #3e7d44;
+    --done-bg: #e3ede2;
+    --partial: #a8681c;
+    --partial-bg: #f2e6d2;
+    --not: #9a3a2c;
+    --not-bg: #f2ded9;
+    --shadow: 2px 2px 0 rgba(36, 31, 22, 0.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #191510;
+      --paper-raised: #221c14;
+      --ink: #ece3cf;
+      --ink-dim: #b3a688;
+      --rule: #423823;
+      --accent: #5cb3ac;
+      --accent-ink: #0d201e;
+      --done: #7cc086;
+      --done-bg: #1c2a1d;
+      --partial: #e0a852;
+      --partial-bg: #2e2412;
+      --not: #e28d7a;
+      --not-bg: #331e19;
+      --shadow: 2px 2px 0 rgba(0, 0, 0, 0.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #191510;
+    --paper-raised: #221c14;
+    --ink: #ece3cf;
+    --ink-dim: #b3a688;
+    --rule: #423823;
+    --accent: #5cb3ac;
+    --accent-ink: #0d201e;
+    --done: #7cc086;
+    --done-bg: #1c2a1d;
+    --partial: #e0a852;
+    --partial-bg: #2e2412;
+    --not: #e28d7a;
+    --not-bg: #331e19;
+    --shadow: 2px 2px 0 rgba(0, 0, 0, 0.35);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Public Sans", -apple-system, "Segoe UI", sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  ::selection { background: var(--accent); color: var(--accent-ink); }
+
+  .sheet {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+
+  /* ---------- header / letterhead ---------- */
+  .letterhead {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 20px;
+    border-bottom: 3px solid var(--ink);
+    padding-bottom: 18px;
+    margin-bottom: 4px;
+    flex-wrap: wrap;
+  }
+  .eyebrow {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 6px;
+  }
+  h1 {
+    font-family: "Big Shoulders Display", sans-serif;
+    font-weight: 800;
+    font-size: 56px;
+    line-height: 0.92;
+    letter-spacing: 0.01em;
+    margin: 0;
+    text-wrap: balance;
+  }
+  .doc-meta {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12.5px;
+    color: var(--ink-dim);
+    text-align: right;
+    line-height: 1.7;
+    white-space: nowrap;
+  }
+  .doc-meta b { color: var(--ink); font-weight: 600; }
+  .subtitle {
+    color: var(--ink-dim);
+    max-width: 62ch;
+    margin: 14px 0 28px;
+  }
+
+  /* ---------- meter strip ---------- */
+  .meters {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    margin-bottom: 26px;
+  }
+  .meter {
+    background: var(--paper-raised);
+    padding: 14px 16px 12px;
+  }
+  .meter .num {
+    font-family: "IBM Plex Mono", monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 30px;
+    font-weight: 500;
+    line-height: 1;
+  }
+  .meter .label {
+    margin-top: 6px;
+    font-size: 11.5px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+  .meter.total .num { color: var(--accent); }
+  .meter.done .num { color: var(--done); }
+  .meter.partial .num { color: var(--partial); }
+  .meter.not .num { color: var(--not); }
+
+  /* ---------- filter chips ---------- */
+  .filters {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 30px;
+  }
+  .chip {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12.5px;
+    border: 1px solid var(--rule);
+    background: transparent;
+    color: var(--ink-dim);
+    padding: 6px 12px;
+    cursor: pointer;
+    border-radius: 999px;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+  .chip:hover { border-color: var(--ink-dim); color: var(--ink); }
+  .chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .chip.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .chip .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; }
+  .chip[data-filter="done"] .dot { background: var(--done); }
+  .chip[data-filter="partial"] .dot { background: var(--partial); }
+  .chip[data-filter="not"] .dot { background: var(--not); }
+  .chip[data-filter="all"] .dot { background: var(--ink-dim); }
+
+  /* ---------- stop (service section) ---------- */
+  .stop {
+    margin-bottom: 34px;
+  }
+  .stop-head {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    border-bottom: 1.5px solid var(--ink);
+    padding-bottom: 6px;
+    margin-bottom: 2px;
+  }
+  .stop-index {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    padding: 1px 6px;
+  }
+  .stop-name {
+    font-family: "Big Shoulders Display", sans-serif;
+    font-weight: 700;
+    font-size: 22px;
+    letter-spacing: 0.01em;
+  }
+  .stop-ratio {
+    margin-left: auto;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12.5px;
+    color: var(--ink-dim);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .req-row {
+    display: grid;
+    grid-template-columns: minmax(160px, 1fr) 96px minmax(220px, 1.6fr);
+    gap: 14px;
+    padding: 9px 0;
+    border-bottom: 1px dashed var(--rule);
+    align-items: start;
+  }
+  .req-row:last-child { border-bottom: none; }
+  .req-label { font-weight: 500; }
+  .req-note { color: var(--ink-dim); font-size: 13.5px; }
+  .req-note code {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    background: var(--paper-raised);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+
+  .status {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11.5px;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    padding: 2px 8px 2px 6px;
+    border-radius: 999px;
+    white-space: nowrap;
+    width: max-content;
+  }
+  .status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; }
+  .status.done { background: var(--done-bg); color: var(--done); }
+  .status.done::before { background: var(--done); }
+  .status.partial { background: var(--partial-bg); color: var(--partial); }
+  .status.partial::before { background: var(--partial); }
+  .status.not { background: var(--not-bg); color: var(--not); }
+  .status.not::before { background: var(--not); }
+
+  [data-status].hidden-by-filter { display: none; }
+
+  /* ---------- comparison tables ---------- */
+  .cmp-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+  }
+  .cmp-table th {
+    text-align: left;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    font-weight: 500;
+    padding: 8px 10px;
+    border-bottom: 1.5px solid var(--ink);
+  }
+  .cmp-table td {
+    padding: 9px 10px;
+    border-bottom: 1px dashed var(--rule);
+    vertical-align: top;
+  }
+  .cmp-table tr:last-child td { border-bottom: none; }
+  .cmp-table .svc { font-weight: 600; white-space: nowrap; }
+  .table-wrap { overflow-x: auto; }
+
+  /* ---------- summary / stamp ---------- */
+  .summary {
+    margin-top: 44px;
+    padding-top: 26px;
+    border-top: 3px solid var(--ink);
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 24px;
+    align-items: start;
+  }
+  .summary p { max-width: 62ch; color: var(--ink-dim); margin: 0 0 12px; }
+  .summary p:first-child { color: var(--ink); }
+  .summary strong { color: var(--ink); font-weight: 600; }
+
+  .stamp {
+    width: 132px;
+    height: 132px;
+    border: 2.5px solid var(--not);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: rotate(-9deg);
+    flex: none;
+    position: relative;
+    opacity: 0.9;
+  }
+  .stamp::before {
+    content: "";
+    position: absolute;
+    inset: 7px;
+    border: 1px solid var(--not);
+    border-radius: 50%;
+  }
+  .stamp-text {
+    font-family: "Big Shoulders Display", sans-serif;
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    text-align: center;
+    color: var(--not);
+    line-height: 1.35;
+    text-transform: uppercase;
+  }
+  .stamp-text .pct { font-size: 26px; display: block; font-family: "IBM Plex Mono", monospace; letter-spacing: 0; }
+
+  footer {
+    margin-top: 40px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11.5px;
+    color: var(--ink-dim);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  @media (max-width: 640px) {
+    h1 { font-size: 38px; }
+    .letterhead { flex-direction: column; align-items: flex-start; }
+    .doc-meta { text-align: left; }
+    .meters { grid-template-columns: repeat(2, 1fr); }
+    .req-row { grid-template-columns: 1fr; gap: 4px; }
+    .stop-ratio { margin-left: 0; }
+  }
+</style>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<div class="sheet">
+
+  <div class="letterhead">
+    <div>
+      <p class="eyebrow">InnoTaxi · сверка технического задания</p>
+      <h1>Путевой лист</h1>
+    </div>
+    <div class="doc-meta">
+      Рейс: <b>ТЗ → прод</b><br>
+      Дата: <b>09.09.2026</b><br>
+      Маршрутов (сервисов): <b>7 / 7</b>
+    </div>
+  </div>
+  <p class="subtitle">Построчная сверка функциональных и нефункциональных требований <code style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;background:var(--paper-raised);padding:1px 5px;border-radius:3px;">README.md</code> с фактическим состоянием кода. Показания сняты по каждому сервису отдельно.</p>
+
+  <div class="meters">
+    <div class="meter total"><div class="num">72%</div><div class="label">Функц. покрытие</div></div>
+    <div class="meter done"><div class="num">31</div><div class="label">Готово</div></div>
+    <div class="meter partial"><div class="num">14</div><div class="label">Частично</div></div>
+    <div class="meter not"><div class="num">8</div><div class="label">Не готово</div></div>
+  </div>
+
+  <div class="filters" role="group" aria-label="Фильтр по статусу">
+    <button class="chip active" data-filter="all"><span class="dot"></span>Все пункты</button>
+    <button class="chip" data-filter="done"><span class="dot"></span>Готово</button>
+    <button class="chip" data-filter="partial"><span class="dot"></span>Частично</button>
+    <button class="chip" data-filter="not"><span class="dot"></span>Не готово</button>
+  </div>
+
+  <!-- ===================== AUTH ===================== -->
+  <section class="stop">
+    <div class="stop-head">
+      <span class="stop-index">01</span>
+      <span class="stop-name">Auth Service</span>
+      <span class="stop-ratio">7 / 7</span>
+    </div>
+    <div class="req-row" data-status="done"><div class="req-label">Делегирование проверки credentials → User Service</div><span class="status done">Готово</span><div class="req-note"><code>gateway/user_service</code></div></div>
+    <div class="req-row" data-status="done"><div class="req-label">Access token 15–30 мин с ролями</div><span class="status done">Готово</span><div class="req-note">20 мин, <code>JWTConfig.AccessTTL</code></div></div>
+    <div class="req-row" data-status="done"><div class="req-label">Refresh token 7–30 дней</div><span class="status done">Готово</span><div class="req-note">14 дней</div></div>
+    <div class="req-row" data-status="done"><div class="req-label">Токены/сессии в Redis</div><span class="status done">Готово</span><div class="req-note">revocation по <code>sid</code>/<code>jti</code>, не сам JWT</div></div>
+    <div class="req-row" data-status="done"><div class="req-label">Валидация токена (подпись/exp/статус в Redis)</div><span class="status done">Готово</span><div class="req-note"><code>/validate</code></div></div>
+    <div class="req-row" data-status="done"><div class="req-label">Обновление токена</div><span class="status done">Готово</span><div class="req-note"><code>/refresh</code></div></div>
+    <div class="req-row" data-status="done"><div class="req-label">Logout инвалидирует оба токена</div><span class="status done">Готово</span><div class="req-note"></div></div>
+  </section>
+
+  <!-- ===================== GATEWAY ===================== -->
+  <section class="stop">
+    <div class="stop-head">
+      <span class="stop-index">02</span>
+      <span class="stop-name">Gateway Service</span>
+      <span class="stop-ratio">2 / 6</span>
+    </div>
+    <div class="req-row" data-status="done"><div class="req-label">Роутинг по URL</div><span class="status done">Готово</span><div class="req-note">nginx <code>location</code></div></div>
+    <div class="req-row" data-status="partial"><div class="req-label">RBAC перед проксированием</div><span class="status partial">Частично</span><div class="req-note">admin/analyst-роуты гейтятся; <code>/orders</code>, <code>/drivers</code> — только аутентификация, без проверки роли</div></div>
+    <div class="req-row" data-status="done"><div class="req-label">Валидация JWT через Auth Service</div><span class="status done">Готово</span><div class="req-note"><code>auth_request</code></div></div>
+    <div class="req-row" data-status="not"><div class="req-label">Балансировка нагрузки</div><span class="status not">Не готово</span><div class="req-note">по одному инстансу на сервис</div></div>
+    <div class="req-row" data-status="partial"><div class="req-label">Rate limiting</div><span class="status partial">Частично</span><div class="req-note">только <code>/auth/login</code>, 5 rps</div></div>
+    <div class="req-row" data-status="partial"><div class="req-label">Трансформация запросов/ответов</div><span class="status partial">Частично</span><div class="req-note">rewrite путей + <code>X-User-Id</code>; версионирования API нет</div></div>
+  </section>
+
+  <!-- ===================== USER ===================== -->
+  <section class="stop">
+    <div class="stop-head">
+      <span class="stop-index">03</span>
+      <span class="stop-name">User Service</span>
+      <span class="stop-ratio">5 / 7</span>
+    </div>
+    <div class="req-row" data-status="done"><div class="req-label">Регистрация (name/phone/email/role/password, хэш)</div><span class="status done">Готово</span><div class="req-note"></div></div>
+    <div class="req-row" data-status="done"><div class="req-label"><code>verify-credentials</code> для Auth Service</div><span class="status done">Готово</span><div class="req-note"></div></div>
+    <div class="req-row" data-status="done"><div class="req-label">Профиль: просмотр / обновление / смена пароля / soft-delete</div><span class="status done">Готово</span><div class="req-note"></div></div>
+    <div class="req-row" data-status="done"><div class="req-label">Admin → роль Analyst</div><span class="status done">Готово</span><div class="req-note"></div></div>
+    <div class="req-row" data-status="partial"><div class="req-label">Рейтинг (последние 20 поездок)</div><span class="status partial">Частично</span><div class="req-note">данные и агрегация есть в Analytic Service; не выведены на профиль User/Driver — нужен новый межсервисный вызов</div></div>
+    <div class="req-row" data-status="not"><div class="req-label">Wallet Integration (баланс/платежи из User Service)</div><span class="status not">Не готово</span><div class="req-note">интеграция построена как <code>order_service ↔ wallet_service</code>, не отсюда</div></div>
+    <div class="req-row" data-status="done"><div class="req-label">JWT на все операции</div><span class="status done">Готово</span><div class="req-note"></div></div>
+  </section>
+
+  <!-- ===================== DRIVER ===================== -->
+  <section class="stop">
+    <div class="stop-head">
+      <span class="stop-index">04</span>
+      <span class="stop-name">Driver Service</span>
+      <span class="stop-ratio">5 / 6</span>
+    </div>
+    <div class="req-row" data-status="done"><div class="req-label">Регистрация, инициируется User Service</div><span class="status done">Готово</span><div class="req-note">асинхронно через Kafka <code>user_registered</code>, не прямой вызов — осознанное решение</div></div>
+    <div class="req-row" data-status="done"><div class="req-label">Профиль: просмотр / обновление</div><span class="status done">Готово</span><div class="req-note"></div></div>
+    <div class="req-row" data-status="done"><div class="req-label">Статус available / on-trip / offline</div><span class="status done">Готово</span><div class="req-note"></div></div>
+    <div class="req-row" data-status="not"><div class="req-label">Accept/decline заявок от Order Service</div><span class="status not">Не готово</span><div class="req-note">вместо этого — серверный auto-claim первого доступного водителя, без предложения/отклика</div></div>
+    <div class="req-row" data-status="done"><div class="req-label">Обновление статуса поездки (started / completed)</div><span class="status done">Готово</span><div class="req-note">как <code>StartTrip</code>/<code>CompleteTrip</code> в Order Service, вызывает сам водитель</div></div>
+    <div class="req-row" data-status="done"><div class="req-label">JWT на все операции</div><span class="status done">Готово</span><div class="req-note"></div></div>
+  </section>
+
+  <!-- ===================== ORDER ===================== -->
+  <section class="stop">
+    <div class="stop-head">
+      <span class="stop-index">05</span>
+      <span class="stop-name">Order Service</span>
+      <span class="stop-ratio">7 / 15</span>
+    </div>
+    <div class="req-row" data-status="partial"><div class="req-label">Создание заказа (только User)</div><span class="status partial">Частично</span><div class="req-note">доступно любой аутентифицированной роли — ограничение по роли не проверяется</div></div>
+    <div class="req-row" data-status="done"><div class="req-label">История заказов и статус</div><span class="status done">Готово</span><div class="req-note"><code>GetOrder</code> + <code>ListOrders</code> (limit/offset), видны обеим сторонам поездки</div></div>
+    <div class="req-row" data-status="done"><div class="req-label">Оценка завершённых поездок</div><span class="status done">Готово</span><div class="req-note"><code>RateTrip</code>: райдер оценивает водителя 1–5 + комментарий; обратное направление не реализовано</div></div>
+    <div class="req-row" data-status="done"><div class="req-label">Создание и управление заказами</div><span class="status done">Готово</span><div class="req-note"></div></div>
+    <div class="req-row" data-status="done"><div class="req-label">Жизненный цикл created → driver_assigned → in_progress → completed/cancelled</div><span class="status done">Готово</span><div class="req-note">реализован полностью</div></div>
+    <div class="req-row" data-status="done"><div class="req-label">Хранение истории с рейтингами и комментариями</div><span class="status done">Готово</span><div class="req-note">заказы хранятся с <code>rating</code>/<code>comment</code></div></div>
+    <div class="req-row" data-status="partial"><div class="req-label">Матчинг по локации, типу такси, рейтингу</div><span class="status partial">Частично</span><div class="req-note">только <code>taxi_type</code>; полей локации водителя и рейтинга не существует вообще</div></div>
+    <div class="req-row" data-status="partial"><div class="req-label">Очередь и доступность водителей</div><span class="status partial">Частично</span><div class="req-note">доступность есть; очереди нет — атомарный claim первого найденного</div></div>
+    <div class="req-row" data-status="not"><div class="req-label">Driver acceptance/rejection logic</div><span class="status not">Не готово</span><div class="req-note">см. Driver Service</div></div>
+    <div class="req-row" data-status="partial"><div class="req-label">Расчёт стоимости (дистанция/время/тип/surge)</div><span class="status partial">Частично</span><div class="req-note">фиксированная цена по типу такси (500/800/1200), без дистанции/времени/surge</div></div>
+    <div class="req-row" data-status="not"><div class="req-label">Управление конфигурацией цен</div><span class="status not">Не готово</span><div class="req-note"></div></div>
+    <div class="req-row" data-status="partial"><div class="req-label">Trip History (маршруты/время/стоимость/рейтинги)</div><span class="status partial">Частично</span><div class="req-note">время и стоимость есть; маршрут = координаты start/destination; рейтингов нет</div></div>
+    <div class="req-row" data-status="not"><div class="req-label">Search & Analytics для Analyst (Elasticsearch)</div><span class="status not">Не готово</span><div class="req-note">ES только как соединение, без индексов и запросов</div></div>
+    <div class="req-row" data-status="done"><div class="req-label">Payment Integration с Wallet Service</div><span class="status done">Готово</span><div class="req-note">списание при создании, возврат при отмене</div></div>
+    <div class="req-row" data-status="done"><div class="req-label">JWT на все операции</div><span class="status done">Готово</span><div class="req-note"></div></div>
+  </section>
+
+  <!-- ===================== ANALYTIC ===================== -->
+  <section class="stop">
+    <div class="stop-head">
+      <span class="stop-index">06</span>
+      <span class="stop-name">Analytic Service</span>
+      <span class="stop-ratio">3 / 6</span>
+    </div>
+    <div class="req-row" data-status="partial"><div class="req-label">Сбор событий по Kafka (регистрации/заказы/рейтинги)</div><span class="status partial">Частично</span><div class="req-note"><code>user_registered</code>, <code>order_created</code>, <code>order_rated</code> — да; статусы заказа после создания (assigned/started/cancelled) отдельными событиями не публикуются</div></div>
+    <div class="req-row" data-status="partial"><div class="req-label">Статистика по заказам и бизнес-метрики</div><span class="status partial">Частично</span><div class="req-note"><code>GetOrderStats</code>/<code>GetDailyOrderCounts</code>; аналитики поведения пользователей нет</div></div>
+    <div class="req-row" data-status="done"><div class="req-label">Аналитика рейтингов</div><span class="status done">Готово</span><div class="req-note"><code>GET /analytics/ratings/drivers/:driver_id</code> — среднее и количество по последним 20 поездкам</div></div>
+    <div class="req-row" data-status="not"><div class="req-label">Отчёты для стейкхолдеров</div><span class="status not">Не готово</span><div class="req-note"></div></div>
+    <div class="req-row" data-status="not"><div class="req-label">Real-time дашборды</div><span class="status not">Не готово</span><div class="req-note">только API, UI нет</div></div>
+    <div class="req-row" data-status="done"><div class="req-label">Доступ только для Analyst</div><span class="status done">Готово</span><div class="req-note"><code>/_gateway/validate/analyst</code></div></div>
+  </section>
+
+  <!-- ===================== WALLET ===================== -->
+  <section class="stop">
+    <div class="stop-head">
+      <span class="stop-index">07</span>
+      <span class="stop-name">Wallet Service</span>
+      <span class="stop-ratio">3 / 6</span>
+    </div>
+    <div class="req-row" data-status="done"><div class="req-label">Автосоздание кошелька при регистрации user/driver</div><span class="status done">Готово</span><div class="req-note">через Kafka <code>user_registered</code></div></div>
+    <div class="req-row" data-status="done"><div class="req-label">Немедленное списание с компенсацией при отмене</div><span class="status done">Готово</span><div class="req-note"></div></div>
+    <div class="req-row" data-status="partial"><div class="req-label">История транзакций со статус-трекингом</div><span class="status partial">Частично</span><div class="req-note">список последних транзакций есть; отдельного статуса (pending/failed) нет</div></div>
+    <div class="req-row" data-status="done"><div class="req-label">Возвраты и отмены</div><span class="status done">Готово</span><div class="req-note"></div></div>
+    <div class="req-row" data-status="partial"><div class="req-label">Аудит-логирование финансовых операций</div><span class="status partial">Частично</span><div class="req-note">структурные логи есть; отдельного audit-журнала нет</div></div>
+    <div class="req-row" data-status="partial"><div class="req-label">Внутренняя service-to-service аутентификация</div><span class="status partial">Частично</span><div class="req-note">доверие по сетевой позиции (<code>/internal/*</code>), без токена — задокументированное решение</div></div>
+  </section>
+
+  <!-- ===================== TECH STACK DEVIATIONS ===================== -->
+  <section class="stop">
+    <div class="stop-head">
+      <span class="stop-index">08</span>
+      <span class="stop-name">Технологический стек — отклонения</span>
+    </div>
+    <div class="table-wrap">
+      <table class="cmp-table">
+        <thead><tr><th>Сервис</th><th>По ТЗ</th><th>По факту</th></tr></thead>
+        <tbody>
+          <tr><td class="svc">User / Driver</td><td>golang-migrate, testify/gomock, Vue.js фронтенд</td><td>своя миграционная система, ручные fakes, фронтенда нет</td></tr>
+          <tr><td class="svc">Order</td><td>Elasticsearch как основная БД, Gin+GraphQL, Redis-кэш, React</td><td><strong>Postgres</strong> как основная БД (осознанно — ES не подходит для строгого lifecycle), gRPC-Gateway вместо GraphQL, кэша и фронтенда нет</td></tr>
+          <tr><td class="svc">Analytic</td><td>ClickHouse, Kafka, Fiber</td><td>полностью соответствует</td></tr>
+          <tr><td class="svc">Wallet</td><td>Postgres, Gin, Redis, sqlx, шифрование</td><td>всё есть, кроме шифрования данных</td></tr>
+          <tr><td class="svc">Auth</td><td>Redis, Gin, golang-jwt</td><td>соответствует</td></tr>
+          <tr><td class="svc">Gateway</td><td>NGINX, JWT, rate limiting, интеграционные тесты</td><td>соответствует; тесты — только ручной <code>smoketest.sh</code></td></tr>
+          <tr><td class="svc">Все сервисы</td><td>testify, gomock, dockertest</td><td>dockertest — да; вместо testify/gomock — ручные fakes (конвенция проекта)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===================== INFRA ===================== -->
+  <section class="stop">
+    <div class="stop-head">
+      <span class="stop-index">09</span>
+      <span class="stop-name">Инфраструктура и эксплуатация</span>
+      <span class="stop-ratio">1 / 14</span>
+    </div>
+    <div class="req-row" data-status="done"><div class="req-label">Монорепозиторий с чёткими границами</div><span class="status done">Готово</span><div class="req-note"></div></div>
+    <div class="req-row" data-status="partial"><div class="req-label">Clean Architecture (3 слоя)</div><span class="status partial">Частично</span><div class="req-note">в 4 из 6 сервисов; user/driver — плоская структура (задокументировано)</div></div>
+    <div class="req-row" data-status="not"><div class="req-label">GitHub Flow (main/develop, PR + review)</div><span class="status not">Не готово</span><div class="req-note">всё коммитится напрямую в <code>main</code></div></div>
+    <div class="req-row" data-status="not"><div class="req-label">CI/CD (GitHub Actions)</div><span class="status not">Не готово</span><div class="req-note">workflow-файлов нет</div></div>
+    <div class="req-row" data-status="done"><div class="req-label">Docker Compose (dev)</div><span class="status done">Готово</span><div class="req-note">все 7 сервисов подняты и живо протестированы</div></div>
+    <div class="req-row" data-status="not"><div class="req-label">Kubernetes + Helm (prod)</div><span class="status not">Не готово</span><div class="req-note"></div></div>
+    <div class="req-row" data-status="partial"><div class="req-label">Конфигурация: .env + K8s ConfigMaps/Secrets</div><span class="status partial">Частично</span><div class="req-note">.env — да, K8s — нет</div></div>
+    <div class="req-row" data-status="partial"><div class="req-label">Документация: Swagger/protobuf/GraphQL/диаграммы</div><span class="status partial">Частично</span><div class="req-note">protobuf — да; Swagger — только для Order Service; GraphQL и диаграмм нет</div></div>
+    <div class="req-row" data-status="partial"><div class="req-label">Unit / integration / E2E тесты, Postman</div><span class="status partial">Частично</span><div class="req-note">unit + integration (dockertest) — да; E2E и Postman нет</div></div>
+    <div class="req-row" data-status="not"><div class="req-label">golangci-lint, coverage &gt;80%, статанализ</div><span class="status not">Не готово</span><div class="req-note">только ручной <code>go vet</code></div></div>
+    <div class="req-row" data-status="partial"><div class="req-label">Мониторинг: Prometheus, логи, Jaeger</div><span class="status partial">Частично</span><div class="req-note">структурные логи (<code>slog</code>) — везде; метрик и трейсинга нет</div></div>
+    <div class="req-row" data-status="not"><div class="req-label">TLS, K8s Secrets, security-аудиты</div><span class="status not">Не готово</span><div class="req-note">весь трафик — plain HTTP внутри docker-сети</div></div>
+    <div class="req-row" data-status="not"><div class="req-label">Circuit breaker, retry с backoff</div><span class="status not">Не готово</span><div class="req-note"></div></div>
+    <div class="req-row" data-status="not"><div class="req-label">Health-checks в самих Go-сервисах</div><span class="status not">Не готово</span><div class="req-note">healthcheck в compose есть только у инфраструктурных контейнеров</div></div>
+  </section>
+
+  <!-- ===================== COMMUNICATION ===================== -->
+  <section class="stop">
+    <div class="stop-head">
+      <span class="stop-index">10</span>
+      <span class="stop-name">Взаимодействие между сервисами</span>
+    </div>
+    <div class="req-row" data-status="partial"><div class="req-label">gRPC для синхронных вызовов</div><span class="status partial">Частично</span><div class="req-note">реализован только в Order Service; остальное — обычный HTTP</div></div>
+    <div class="req-row" data-status="partial"><div class="req-label">Kafka для асинхронных событий</div><span class="status partial">Частично</span><div class="req-note"><code>user_registered</code>, <code>order_created</code> — да; статус заказа и завершение платежа отдельными событиями не публикуются</div></div>
+    <div class="req-row" data-status="partial"><div class="req-label">Saga pattern для распределённых транзакций</div><span class="status partial">Частично</span><div class="req-note">точечные компенсации (charge/refund, claim/release) — формального оркестратора нет</div></div>
+    <div class="req-row" data-status="done"><div class="req-label">Каждый сервис владеет своими данными</div><span class="status done">Готово</span><div class="req-note">без прямого доступа к чужим БД</div></div>
+  </section>
+
+  <div class="summary">
+    <div>
+      <p><strong>72% функционального ТЗ закрыто</strong> по 53 пунктам из семи сервисов (31 полностью, 14 частично). <em>Обновлено 10.09 — добавлены рейтинги поездок и история заказов.</em></p>
+      <p>Production-контур почти не затрагивался: CI/CD, Kubernetes, мониторинг/трейсинг, security-обвязка, saga/circuit-breaker — отдельный, гораздо более объёмный пласт работы.</p>
+      <p>Крупнейшие оставшиеся куски бизнес-функциональности: вывод рейтинга на профиль (данные уже есть), реальный гео-матчинг, Pricing Engine, accept/decline на стороне водителя, поиск через Elasticsearch.</p>
+    </div>
+    <div class="stamp">
+      <div class="stamp-text">Готовность<span class="pct">72%</span>функционала</div>
+    </div>
+  </div>
+
+  <footer>
+    <span>docs/PROJECT-STATUS.md — полная версия с таблицами</span>
+    <span>InnoTaxi · внутренний документ</span>
+  </footer>
+
+</div>
+
+<script>
+  document.querySelectorAll('.chip').forEach(function (chip) {
+    chip.addEventListener('click', function () {
+      document.querySelectorAll('.chip').forEach(function (c) { c.classList.remove('active'); });
+      chip.classList.add('active');
+      var filter = chip.getAttribute('data-filter');
+      document.querySelectorAll('[data-status]').forEach(function (row) {
+        var show = filter === 'all' || row.getAttribute('data-status') === filter;
+        row.classList.toggle('hidden-by-filter', !show);
+      });
+    });
+  });
+</script>

@@ -415,9 +415,15 @@ project, restart just recreates the single-node log from scratch) — but to
 match `docker-compose.yaml`'s behavior (which doesn't bind-mount a volume
 for kafka today, unlike every other stateful dependency) include one
 anyway: PVC `1Gi`, mounted at `/var/lib/kafka/data` (the `apache/kafka`
-image's documented default log directory). `Service` named `kafka`, port
-`9092` (client) — the controller port `9093` does not need a Service
-(nothing outside this single pod ever dials it).
+image's documented default log directory). `Service` named `kafka`, **two**
+ports: `9092` (client) and `9093` (controller). Combined broker+controller
+mode still means the broker half dials the controller half over the network
+address from `KAFKA_CONTROLLER_QUORUM_VOTERS` (`kafka:9093`) — being the
+same pod does not make that a loopback call, so the Service must expose
+9093 too, or the broker times out trying to register with the controller
+quorum and the pod crash-loops. (Corrected 2026-09-16 after this exact
+failure was hit during the real deploy — the original text wrongly assumed
+same-pod traffic bypasses the Service.)
 
 **Verify:**
 ```bash

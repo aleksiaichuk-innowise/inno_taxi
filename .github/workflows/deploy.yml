@@ -129,7 +129,8 @@ jobs:
         with:
           ref: main
       - name: Bump image tag
-        run: sed -i "s/tag: .*/tag: ${{ github.sha }}/" deploy/helm/inno-taxi/values-prod.yaml
+        run: |
+          sed -i "s/tag: .*/tag: ${{ github.sha }}/" deploy/helm/inno-taxi/values-prod.yaml
       - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"

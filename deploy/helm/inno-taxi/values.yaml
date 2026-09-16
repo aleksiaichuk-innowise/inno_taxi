@@ -1,6 +1,6 @@
-domain: ""
+domain: "zapisano.xyz"
 image:
-  registry: ""
+  registry: "ghcr.io/aleksiaichuk-innowise/inno-taxi"
   tag: "latest"
 
 credentials:

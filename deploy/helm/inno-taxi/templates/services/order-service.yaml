@@ -19,6 +19,7 @@ spec:
       containers:
         - name: order-service
           image: "{{ .Values.image.registry}}/order-service:{{ .Values.image.tag}}"
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
             - containerPort: 9082

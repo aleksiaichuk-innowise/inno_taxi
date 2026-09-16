@@ -19,6 +19,7 @@ spec:
       containers:
         - name: wallet-service
           image: "{{ .Values.image.registry }}/wallet-service:{{ .Values.image.tag }}"
+          imagePullPolicy: Always
           ports:
             - containerPort: 8084
           env:

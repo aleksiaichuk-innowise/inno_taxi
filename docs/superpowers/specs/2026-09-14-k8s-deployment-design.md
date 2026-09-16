@@ -127,6 +127,20 @@ both confined to `services/gateway_service/nginx.conf`:**
 Without both fixes, `gateway_service` cannot resolve — or even name — any
 of the other 6 services once deployed to Kubernetes.
 
+**A third fix, found during the real deploy (2026-09-16):** even with the
+resolver IP corrected, `nginx`'s `resolver` directive does not consult
+`/etc/resolv.conf` at all — not just the nameserver address (which is why
+the IP had to be hardcoded above), but also the pod's DNS `search` list
+(`default.svc.cluster.local`, `svc.cluster.local`, `cluster.local`, with
+`ndots:5`) that lets ordinary clients (Go's resolver, `curl`, etc.) resolve
+a bare Service name like `mongo` or `kafka`. `nginx`'s internal resolver
+sends exactly the hostname it's given, unqualified, so a bare name like
+`user-service` gets NXDOMAIN from CoreDNS. Every one of the same 18
+`set $<x>_service "..."` literals must carry the full in-cluster DNS name
+instead: `user-service.default.svc.cluster.local:8080`, not
+`user-service:8080` (`default` because that's the namespace this chart
+deploys into).
+
 ## Stateful Dependencies
 
 Each of the 7 infra dependencies becomes a `StatefulSet` (stable pod

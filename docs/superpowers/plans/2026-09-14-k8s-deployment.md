@@ -17,10 +17,13 @@ HTTPS on a real domain, redeployed automatically on every push to `main`.
 7 services (Deployments) and 7 stateful dependencies (StatefulSets), an
 Ingress with cert-manager-issued TLS, a single Secret for credentials, and
 a GitHub Actions workflow that tests, scans, builds/pushes 7 images to
-`ghcr.io`, and runs `helm upgrade` against the k3s cluster.
+`ghcr.io`. **Revised 2026-09-16:** the actual deploy step is GitOps via
+Argo CD, not a direct `helm upgrade` from CI — CI's last step commits the
+new image tag to `values-prod.yaml`, and Argo CD (running in-cluster,
+watching this repo) applies it. See Tasks 16-17.
 
 **Tech Stack:** Helm 3, Kubernetes (k3s), Traefik (bundled with k3s),
-cert-manager + Let's Encrypt, GitHub Actions, `ghcr.io`.
+cert-manager + Let's Encrypt, Argo CD, GitHub Actions, `ghcr.io`.
 
 **Spec:** `docs/superpowers/specs/2026-09-14-k8s-deployment-design.md`
 
@@ -47,7 +50,10 @@ cert-manager + Let's Encrypt, GitHub Actions, `ghcr.io`.
   hostnames `docker-compose.yaml` already uses.
 - Credentials go in one `Secret` (`inno-taxi-secrets`), sourced from
   `values.yaml` — no Vault/sealed-secrets.
-- Registry: `ghcr.io/<owner>/<repo>-<service>`, tag = `${{ github.sha }}`.
+- Registry: `ghcr.io/<owner>/inno-taxi/<service>-service` (matches
+  `values.yaml`'s `image.registry` + the chart's own `<service>-service`
+  image-name suffix — not a hyphenated single package name), tag =
+  `${{ github.sha }}`.
 - Target cluster: k3s (bundled Traefik ingress + `local-path-provisioner`
   storage — never install ingress-nginx or a separate storage provisioner).
 - Migrations (`goose`) stay a manual step via `kubectl port-forward` —
@@ -608,25 +614,34 @@ write in this repo.
 2. `curl -sfL https://get.k3s.io | sh -s - --tls-san <that public IP>`
 3. `sysctl -w vm.max_map_count=262144` and persist it:
    `echo 'vm.max_map_count=262144' > /etc/sysctl.d/99-elasticsearch.conf`
-4. Firewall: open `22`, `80`, `443`, `6443`.
-5. Copy `/etc/rancher/k3s/k3s.yaml` off the VPS, replace
-   `server: https://127.0.0.1:6443` with
-   `server: https://<public IP>:6443`, `base64 -w0` it, and save the result
-   somewhere safe locally (this becomes the `KUBE_CONFIG_B64` GitHub
-   secret in Task 16 — don't create the GitHub secret yet, just have the
-   value ready).
-6. Point your chosen domain's A record at the VPS's public IP.
-7. `helm install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --set installCRDs=true`
-   (this is the one Helm chart in this whole project that is NOT `inno-taxi`
-   — a platform add-on, installed once, separately). Then create a
-   `ClusterIssuer` named `letsencrypt-prod` for Let's Encrypt via HTTP-01 —
-   follow cert-manager's own ACME tutorial for the exact object shape,
-   since it's a one-time cluster object this plan doesn't need to own.
+4. Firewall: open `22`, `80`, `443`. **Revised 2026-09-16:** `6443` does
+   NOT need to be open to the internet — that was only for CI's direct
+   `helm upgrade` (dropped in Task 16-17's move to Argo CD/GitOps). Open it
+   temporarily only for your own `kubectl` access from a known IP, if ever.
+   (This plan was actually run with `6443` open during the original
+   attempt, before the Argo CD switch — worth closing it now if you're
+   following this plan today, harmless to leave as-is if you already have
+   it open and the switch happened after the fact, like it did here.)
+5. Point your chosen domain's A record at the VPS's public IP.
+6. `helm install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --set installCRDs=true`
+   (this is one of two Helm charts in this whole project that are NOT
+   `inno-taxi` — a platform add-on, installed once, separately). Then
+   create a `ClusterIssuer` named `letsencrypt-prod` for Let's Encrypt via
+   HTTP-01 — follow cert-manager's own ACME tutorial for the exact object
+   shape, since it's a one-time cluster object this plan doesn't need to
+   own.
+7. Install Argo CD (the other non-`inno-taxi` install — see Task 17 for
+   what it's for):
+   ```bash
+   kubectl create namespace argocd
+   kubectl apply -n argocd --server-side --force-conflicts \
+     -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+   ```
 
 **Verify:**
 ```bash
 kubectl get nodes          # one Ready node
-kubectl get pods -A        # kube-system pods (traefik, coredns, local-path-provisioner) all Running
+kubectl get pods -A        # kube-system + cert-manager + argocd pods all Running
 kubectl get clusterissuer  # letsencrypt-prod present
 ```
 
@@ -642,8 +657,8 @@ real install.
 1. Build and push the 7 images by hand once (before CI exists) so there's
    something for the chart to actually run:
    ```bash
-   docker build -f services/<service>/Dockerfile -t ghcr.io/<owner>/inno-taxi-<service>:manual-test .
-   docker push ghcr.io/<owner>/inno-taxi-<service>:manual-test
+   docker build -f services/<service>/Dockerfile -t ghcr.io/<owner>/inno-taxi/<service>-service:manual-test .
+   docker push ghcr.io/<owner>/inno-taxi/<service>-service:manual-test
    ```
    (repeat for all 7 — `gateway_service`'s context is
    `services/gateway_service`, not repo root, per the spec, **and** it
@@ -667,7 +682,12 @@ result (what you did, what came back).
 
 ---
 
-### Task 16: GitHub Actions CI/CD pipeline
+### Task 16: GitHub Actions CI pipeline (build/push/tag-bump — no cluster access)
+
+**Revised 2026-09-16:** originally this task's last job ran `helm upgrade`
+directly against the cluster over the internet (needing a `KUBE_CONFIG_B64`
+secret and port 6443 open). After installing Argo CD (Task 17), that job
+is replaced — CI's last step is a git commit, nothing more.
 
 **Study first:** GitHub Actions' own "Quickstart" doc for jobs/steps/matrix
 syntax if this is your first workflow file — the concepts (jobs run in
@@ -677,6 +697,10 @@ action's options.
 
 **Files to create:**
 - `.github/workflows/deploy.yml`
+- `deploy/helm/inno-taxi/values-prod.yaml` — starts holding just
+  `image: { tag: manual-test }` (the value this workflow will overwrite on
+  every push). `domain`/`image.registry` stay in the base `values.yaml`
+  from Task 1 — no need to repeat them here.
 
 **Requirements (stages from the spec, in this order):**
 1. `test` job, matrix over the 7 service directories: checkout, setup-go,
@@ -693,32 +717,89 @@ action's options.
    `services/gateway_service` for gateway, built with `Dockerfile.k8s`
    specifically, not the regular `Dockerfile` — see Task 4), `trivy image` scan on the
    built image (fail on `HIGH`/`CRITICAL`), then push to
-   `ghcr.io/<owner>/inno-taxi-<service>:${{ github.sha }}` and `:latest`,
-   authenticating with the built-in `secrets.GITHUB_TOKEN` (needs
-   `permissions: packages: write` at the workflow or job level — no extra
-   PAT required).
-4. `deploy` job, `needs: build-and-push`, only on push to `main`: install
-   `kubectl`+`helm`, reconstruct the kubeconfig from the
-   `KUBE_CONFIG_B64` GitHub secret you saved in Task 14 (base64-decode it
-   to a temp file, `export KUBECONFIG=<that file>`), then
-   `helm upgrade --install inno-taxi deploy/helm/inno-taxi -f deploy/helm/inno-taxi/values-prod.yaml --set image.tag=${{ github.sha }} --wait`.
-   `values-prod.yaml` is a new small file (create it in this task) holding
-   just your real `domain` value — everything else stays the chart's
-   defaults from Task 1.
-5. Before wiring the `deploy` job for real: add the `KUBE_CONFIG_B64`
-   secret to the GitHub repo (Settings → Secrets and variables → Actions),
-   using the value you saved in Task 14.
+   `ghcr.io/<owner>/inno-taxi/<service>-service:${{ github.sha }}` and
+   `:latest` (note: nested path under `inno-taxi/`, matching
+   `values.yaml`'s `image.registry` — not a hyphenated
+   `inno-taxi-<service>` package name), authenticating with the built-in
+   `secrets.GITHUB_TOKEN` (needs `permissions: packages: write` at the
+   workflow or job level — no extra PAT required).
+4. `update-manifest` job, `needs: build-and-push`, only on push to `main`,
+   `permissions: contents: write`: checkout, then update
+   `deploy/helm/inno-taxi/values-prod.yaml`'s `image.tag` field to
+   `${{ github.sha }}` (a one-line `yq`/`sed` edit — the file already
+   exists from this task's file list above, this job only ever changes
+   that one field), then commit and push straight to `main` using
+   `git config user.name`/`user.email` set to something bot-like (e.g.
+   `github-actions[bot]`) and the workflow's own checkout credentials —
+   **no cluster credentials anywhere in this workflow at all.**
 
 **Verify:**
 1. Push a trivial, low-risk change (e.g. a comment) on a feature branch,
-   open a PR, and confirm the `test`/`vulncheck` jobs run and pass — `build-
-   and-push`/`deploy` should NOT run on a PR (only on `main`).
-2. Merge to `main` and watch the full pipeline, including `deploy`, run
-   end to end.
-3. `kubectl get pods` on the VPS afterward — confirm pods restarted with
-   the new image tag (`kubectl get pods -o jsonpath='{.items[*].spec.containers[*].image}'`).
-4. Re-run the Task 15 smoke test through the real domain.
+   open a PR, and confirm the `test`/`vulncheck` jobs run and pass —
+   `build-and-push`/`update-manifest` should NOT run on a PR (only on
+   `main`).
+2. Merge to `main` and watch `build-and-push` and `update-manifest` run
+   end to end — confirm the commit `update-manifest` pushes actually
+   lands on `main` (check the repo's commit history).
+3. Continue straight to Task 17 — this job's commit does nothing
+   observable in the cluster until Argo CD exists to pick it up.
 
-**Review checkpoint:** show the workflow file and the Actions run URL/logs
-for both the PR run and the `main` run. This is the last task in the plan —
+**Review checkpoint:** show the workflow file, `values-prod.yaml`, and the
+Actions run URL/logs for both the PR run and the `main` run.
+
+---
+
+### Task 17: Argo CD (GitOps) — the actual deploy step
+
+**Study first:** one of the Argo CD/GitOps playlists — the core concept
+that matters here is the `Application` custom resource: it tells Argo CD
+*what* to deploy (a chart + values file, at a git revision) and *where*
+(which cluster/namespace), and `syncPolicy.automated` makes it apply
+changes without a human running a command.
+
+**Files to create:**
+- `deploy/argocd/application.yaml`
+
+**Requirements:**
+- One `Application` (`apiVersion: argoproj.io/v1alpha1`,
+  `kind: Application`), `metadata.namespace: argocd`,
+  `metadata.name: inno-taxi`.
+- `spec.project: default` (Argo CD's built-in default project — this repo
+  doesn't need a custom one).
+- `spec.source`: `repoURL` = this repo's GitHub URL,
+  `targetRevision: main`, `path: deploy/helm/inno-taxi`,
+  `helm.valueFiles: [values-prod.yaml]`.
+- `spec.destination`: `server: https://kubernetes.default.svc` (the
+  in-cluster API server — Argo CD is deploying to the same cluster it runs
+  in), `namespace: default`.
+- `spec.syncPolicy.automated`: `prune: true`, `selfHeal: true` — every git
+  change on `main` gets applied automatically, and any manual `kubectl
+  edit` drift on the live objects gets reverted back to what git says.
+
+**Argo CD itself is already installed** (Task 14, step 7) — this task only
+registers the `Application` pointing at our chart.
+
+**Verify:**
+```bash
+kubectl apply -n argocd -f deploy/argocd/application.yaml
+kubectl get application -n argocd
+```
+Expect `inno-taxi` to appear, eventually reaching `SYNC STATUS: Synced` /
+`HEALTH STATUS: Healthy` (may take a minute on first apply — Argo CD has
+to clone the repo and render the chart).
+
+Then prove the automatic part actually works: make a trivial, reversible
+change through Task 16's pipeline (e.g. push an empty commit, or let a
+real code change flow through) and watch `kubectl get application -n
+argocd inno-taxi -w` pick up the new `image.tag` without you running
+`kubectl`/`helm` by hand.
+
+**Final verify (whole deploy, end to end):**
+1. `kubectl get pods` — confirm pods restarted with the new image tag
+   (`kubectl get pods -o jsonpath='{.items[*].spec.containers[*].image}'`).
+2. Re-run the Task 15 smoke test through the real domain.
+
+**Review checkpoint:** show `application.yaml`, the `kubectl get
+application` output, and confirmation that a real push flowed all the way
+through without manual intervention. This is the last task in the plan —
 once this is green, the deployment is live and self-updating.

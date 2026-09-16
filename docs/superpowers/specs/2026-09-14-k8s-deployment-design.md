@@ -51,8 +51,9 @@ decided; see "Domain" below).
 GitHub push to main
    -> CI: lint/vet, unit+integration tests, govulncheck, trivy scan
    -> CI: docker build + push (7 images) to ghcr.io
-   -> CI: helm upgrade --install (kubeconfig secret) against the k3s API
-          on the VPS
+   -> CI: bump values-prod.yaml's image.tag, commit + push to main
+   -> Argo CD (in-cluster, watching this repo): detects the git change,
+          applies the chart automatically
    -> k3s: Traefik routes HTTPS traffic for the domain to gateway-service
    -> gateway-service (nginx, existing role-gating logic, unchanged)
           -> routes to the other 6 services exactly as it does today
@@ -240,18 +241,47 @@ README names the exact pipeline stages this follows:
    built with the same Docker context each already uses in
    `docker-compose.yaml` (repo root for the 6 Go services, since they
    `replace` the `shared` module via a relative path; `services/gateway_service`
-   for the gateway, which has no Go module). Tagged with `${{ github.sha }}`
-   and `latest`, pushed to `ghcr.io/<owner>/<repo>-<service>`.
-5. **Deploy (`main` branch only, after all 7 images are pushed)** — a single
-   job installs `kubectl`/`helm`, reconstructs the kubeconfig from the
-   `KUBE_CONFIG_B64` GitHub Secret, and runs
-   `helm upgrade --install inno-taxi ./deploy/helm/inno-taxi -f values-prod.yaml --set image.tag=${{ github.sha }} --wait`.
-   Deploying all 7 services together (one Helm release per push) keeps the
-   running stack at one consistent version instead of services drifting out
-   of sync with each other.
+   for the gateway, which has no Go module — and specifically its
+   `Dockerfile.k8s`, not the regular `Dockerfile`, per the Chart Structure
+   section above). Tagged with `${{ github.sha }}` and `latest`, pushed to
+   `ghcr.io/<owner>/<repo>-<service>`.
+5. **Update manifest (`main` branch only, after all 7 images are pushed)**
+   — **revised 2026-09-16 to GitOps via Argo CD**, replacing a direct
+   `helm upgrade` from CI. A single job bumps
+   `deploy/helm/inno-taxi/values-prod.yaml`'s `image.tag` to
+   `${{ github.sha }}` and commits + pushes that one-line change back to
+   `main` using the workflow's own `GITHUB_TOKEN` (needs `contents: write`
+   permission) — CI never touches the cluster directly, and needs no
+   cluster credentials at all.
 
 Stages 1-4 run as a matrix across the 7 services in parallel; stage 5 is a
-single job gated on every matrix job succeeding.
+single job gated on every matrix job succeeding. Argo CD (installed
+directly in the cluster, watching this repo — see the new Argo CD section
+below) detects the `values-prod.yaml` change and applies it; that's the
+actual deploy step now.
+
+## Argo CD (GitOps)
+
+**Added 2026-09-16**, replacing the original design's direct
+`helm upgrade`-from-CI deploy step, after the user asked to use GitOps
+instead. Argo CD is installed once as a cluster-wide platform add-on (its
+own `argocd` namespace, official upstream manifests — not part of this
+chart, the same category as cert-manager), and reconciles a single
+`Application` custom resource (`deploy/argocd/application.yaml`, applied
+once by hand — this project's git repo is public, so no repo-credentials
+Secret is needed) pointing at:
+- `repoURL`: this repo, `targetRevision: main`, `path: deploy/helm/inno-taxi`
+- `helm.valueFiles: [values-prod.yaml]`
+- `destination`: the same in-cluster API server (`https://kubernetes.default.svc`), namespace `default`
+- `syncPolicy.automated` with `prune: true` and `selfHeal: true` — Argo CD
+  applies every git change automatically (no manual `argocd app sync`) and
+  reverts any manual `kubectl edit` drift back to what git says, which is
+  the entire point of GitOps: git is the single source of truth for
+  cluster state, not a human running `helm upgrade` by hand.
+
+CI's only remaining connection to the deploy is the one-line git commit to
+`values-prod.yaml` in stage 5 above — everything from there on on is Argo
+CD's job, not the workflow's.
 
 ## VPS Bootstrap (runbook, not automation)
 
@@ -260,10 +290,12 @@ infrastructure disproportionate to a test assignment. Documented as a
 runbook the user follows once when the VPS is provisioned:
 
 1. Provision an Ubuntu 22.04/24.04 VPS, ≥4 vCPU / 8 GB RAM.
-2. Install k3s with the node's public IP in the API server's TLS SAN (required
-   because k3s only signs the API server cert for localhost/private IPs by
-   default, and the kubeconfig used by CI — which runs on GitHub-hosted
-   runners, not on the VPS itself — connects via the public IP):
+2. Install k3s with the node's public IP in the API server's TLS SAN — kept
+   even though CI no longer needs external API access (see the Argo CD
+   section: CI only commits to git now, it never talks to the cluster
+   directly) purely so the operator can still manage the cluster remotely
+   from their own laptop's `kubectl`/`helm` if they want to, without a
+   fresh reinstall later:
    ```bash
    curl -sfL https://get.k3s.io | sh -s - --tls-san <VPS-public-IP>
    ```
@@ -275,21 +307,29 @@ runbook the user follows once when the VPS is provisioned:
    sysctl -w vm.max_map_count=262144
    echo 'vm.max_map_count=262144' > /etc/sysctl.d/99-elasticsearch.conf
    ```
-4. Firewall: open 22 (SSH), 80/443 (HTTP/HTTPS — cert-manager's HTTP-01
-   challenge and all user traffic), and 6443 (k8s API — needed by CI, which
-   runs from GitHub-hosted runners with no fixed IP range, so this port stays
-   open to the internet; the API server's TLS client-certificate
-   authentication is the only protection here, an accepted trade-off for a
-   learning project, not something to carry into a real production
-   deployment).
-5. Extract the kubeconfig from `/etc/rancher/k3s/k3s.yaml`, replace
-   `server: https://127.0.0.1:6443` with `server: https://<VPS-public-IP>:6443`,
-   base64-encode it, and store it as the `KUBE_CONFIG_B64` GitHub Actions
-   secret.
-6. Once the VPS's public IP is known, point the chosen domain's A record at
+4. Firewall: open 22 (SSH) and 80/443 (HTTP/HTTPS — cert-manager's HTTP-01
+   challenge and all user traffic). Port 6443 (k8s API) no longer needs to
+   be open to the whole internet — that requirement only existed for CI's
+   direct `helm upgrade`, which the move to Argo CD (GitOps, pulling from
+   git rather than being pushed to) removed entirely. Leave 6443 closed by
+   default; open it temporarily only if/when doing remote `kubectl` from
+   a personal, known IP.
+5. Once the VPS's public IP is known, point the chosen domain's A record at
    it (required before cert-manager's HTTP-01 challenge can succeed).
-7. Install cert-manager into the cluster (one-time platform add-on, not part
+6. Install cert-manager into the cluster (one-time platform add-on, not part
    of this app's chart) and create the `ClusterIssuer` for Let's Encrypt.
+7. Install Argo CD (one-time platform add-on, own `argocd` namespace):
+   ```bash
+   kubectl create namespace argocd
+   kubectl apply -n argocd --server-side --force-conflicts \
+     -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+   ```
+   Then apply this repo's `deploy/argocd/application.yaml` once
+   (`kubectl apply -n argocd -f deploy/argocd/application.yaml`) to register
+   the `Application` that watches this chart — see the Argo CD section
+   above for what it contains. Everything after this one-time apply is
+   automatic: every `values-prod.yaml` change on `main` gets picked up and
+   applied without further manual steps.
 
 ## Non-Goals
 

@@ -703,13 +703,15 @@ action's options.
   from Task 1 — no need to repeat them here.
 
 **Requirements (stages from the spec, in this order):**
-1. `test` job, matrix over the 7 service directories: checkout, setup-go,
-   `cd services/<service>`, `gofmt -l .` (fail if non-empty output),
-   `go vet ./...`, `go build ./...`, `go test ./...`, then
-   `go test -tags=integration ./...` (safe to always run — services
+1. `test` job, matrix over **6** service directories — every service
+   except `gateway_service`, which has no `go.mod`/Go code at all (pure
+   nginx) and would just fail `go build`/`go vet` with "no such module":
+   checkout, setup-go, `cd services/<service>`, `gofmt -l .` (fail if
+   non-empty output), `go vet ./...`, `go build ./...`, `go test ./...`,
+   then `go test -tags=integration ./...` (safe to always run — services
    without such tests just report "no test files").
-2. `vulncheck` job, matrix over the 7 services: `govulncheck ./...` per
-   module.
+2. `vulncheck` job, matrix over the same 6 Go services: `govulncheck ./...`
+   per module.
 3. `build-and-push` job, matrix over the 7 services, `needs: [test,
    vulncheck]`, only on push to `main`: `docker build` with the context
    rule from the spec (repo root for the 6 Go services, since they

@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: inno-taxi
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/aleksiaichuk-innowise/inno_taxi.git
+    targetRevision: main
+    path: deploy/helm/inno-taxi
+    helm:
+      valueFiles:
+        - values-prod.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

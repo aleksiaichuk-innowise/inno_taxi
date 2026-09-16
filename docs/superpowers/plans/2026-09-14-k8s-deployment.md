@@ -52,9 +52,12 @@ cert-manager + Let's Encrypt, GitHub Actions, `ghcr.io`.
   storage — never install ingress-nginx or a separate storage provisioner).
 - Migrations (`goose`) stay a manual step via `kubectl port-forward` —
   never automated into a Helm hook/Job.
-- Nothing in this plan touches business logic — only new manifests/CI, plus
-  the two `gateway_service/nginx.conf` fixes named in Tasks 4 and part of
-  the chart work (resolver IP, underscore hostnames).
+- Nothing in this plan touches business logic. `gateway_service`'s config
+  needs a Kubernetes-only variant (Task 4): `nginx.conf` (Docker Compose)
+  stays untouched, `nginx.k8s.conf` + `Dockerfile.k8s` (new files) carry
+  the k3s-specific resolver IP, hyphenated names, and fully-qualified
+  in-cluster hostnames — one shared, mutated file broke Compose the first
+  time this was tried.
 
 ---
 
@@ -174,44 +177,67 @@ label, wrong selector) would otherwise get copied 6 more times.
 
 ---
 
-### Task 4: Fix `gateway_service/nginx.conf` for Kubernetes
+### Task 4: Add a Kubernetes-specific `gateway_service` config
 
-**No study material needed — this is a direct, small edit to an existing
-file, not new infrastructure.**
+**No study material needed — this is a direct, small edit/addition, not
+new infrastructure.**
 
-**Files to modify:**
-- `services/gateway_service/nginx.conf`
+**Corrected 2026-09-16:** the original version of this task edited
+`nginx.conf` in place. That file also backs `docker-compose.yaml`'s
+`gateway_service`, so editing it in place silently broke local Docker
+Compose dev deployments — discovered only after a real `helm install`,
+too late to be a cheap fix. The corrected approach (see the spec's Chart
+Structure section) keeps `nginx.conf` untouched for Compose and adds a
+second, Kubernetes-only config + Dockerfile.
 
-**Requirements (exact, from the spec's findings):**
+**Files to create:**
+- `services/gateway_service/nginx.k8s.conf` — start from a copy of the
+  existing `nginx.conf`, then apply the 3 changes below.
+- `services/gateway_service/Dockerfile.k8s` — identical to the existing
+  `Dockerfile`, except `COPY nginx.k8s.conf /etc/nginx/nginx.conf` instead
+  of `COPY nginx.conf ...`.
+
+**Files NOT to modify:**
+- `services/gateway_service/nginx.conf` — stays exactly as it is; Compose
+  still needs it unchanged.
+- `services/gateway_service/Dockerfile` — stays exactly as it is; still
+  the one `docker-compose.yaml` builds.
+
+**Requirements for `nginx.k8s.conf` (exact, from the spec's findings):**
 1. Line 18: `resolver 127.0.0.11 valid=10s;` → `resolver 10.43.0.10 valid=10s;`
    (`10.43.0.10` is k3s's default CoreDNS ClusterIP, deterministic for
    k3s's default `10.43.0.0/16` service CIDR).
 2. Every `set $<x>_service "<x>_service:<port>";` line must have its
-   **hostname** changed from underscore to hyphen form — the port stays
-   the same. Exact replacements, by line content (there are 18 occurrences
-   across the file, several repeating):
-   - `"auth_service:8082"` → `"auth-service:8082"` (6 occurrences)
-   - `"user_service:8080"` → `"user-service:8080"` (3 occurrences)
-   - `"driver_service:8081"` → `"driver-service:8081"` (1 occurrence)
-   - `"order_service:8080"` → `"order-service:8080"` (7 occurrences)
-   - `"analytic_service:8085"` → `"analytic-service:8085"` (1 occurrence)
+   **hostname** changed to the hyphenated, fully-qualified in-cluster DNS
+   name — the port stays the same. Exact replacements, by line content
+   (18 occurrences across the file, several repeating):
+   - `"auth_service:8082"` → `"auth-service.default.svc.cluster.local:8082"` (6 occurrences)
+   - `"user_service:8080"` → `"user-service.default.svc.cluster.local:8080"` (3 occurrences)
+   - `"driver_service:8081"` → `"driver-service.default.svc.cluster.local:8081"` (1 occurrence)
+   - `"order_service:8080"` → `"order-service.default.svc.cluster.local:8080"` (7 occurrences)
+   - `"analytic_service:8085"` → `"analytic-service.default.svc.cluster.local:8085"` (1 occurrence)
 
 **Verify:**
 ```bash
-grep -n "127.0.0.11\|_service:" services/gateway_service/nginx.conf
+grep -n "127.0.0.11\|_service:" services/gateway_service/nginx.k8s.conf
 ```
-Expected: no output at all (every occurrence replaced).
-
-Then confirm nothing else in the repo depends on the old underscore
-hostnames for this file specifically:
+Expected: no output (every occurrence replaced in the k8s copy).
 ```bash
-grep -rn "auth_service:8082\|user_service:8080\|driver_service:8081\|order_service:8080\|analytic_service:8085" services/gateway_service/
+diff services/gateway_service/nginx.conf services/gateway_service/nginx.k8s.conf
 ```
-Expected: no output.
+Expected: only the resolver line and the 18 hostname lines differ —
+everything else (routing rules, rate limiting, auth_request logic) must
+be identical between the two files.
+```bash
+git diff --stat services/gateway_service/nginx.conf services/gateway_service/Dockerfile
+```
+Expected: empty — confirms neither original file was touched.
 
-**Review checkpoint:** show the diff. Claude checks every one of the 18
-occurrences was caught (miscounting here silently breaks one specific
-route, not all of them, which is easy to miss in manual testing).
+**Review checkpoint:** show both new files and the `diff` output above.
+Claude checks every one of the 18 occurrences was caught in the k8s copy,
+and that the two untouched files really are untouched (a Compose
+regression here is easy to miss until someone next runs
+`docker compose up`).
 
 ---
 
@@ -278,8 +304,9 @@ per-service values:
 - `CLICKHOUSE_USERNAME=<from secret: clickhouseUsername>`
 - `CLICKHOUSE_PASSWORD=<from secret: clickhousePassword>`
 
-**`gateway-service`** (image built from `services/gateway_service`'s own
-Dockerfile — no Go module, so no env vars at all; port `8000`): just a
+**`gateway-service`** (image built from `services/gateway_service`'s
+`Dockerfile.k8s`, not its regular `Dockerfile` — see Task 4; no Go module,
+so no env vars at all; port `8000`): just a
 `Deployment` (image `gateway-service`, container port `8000`, no `env:`
 block) + `Service` (port `8000`). This is the only service with zero env
 vars — don't add a Secret reference here, there's nothing for it to read.
@@ -619,7 +646,9 @@ real install.
    docker push ghcr.io/<owner>/inno-taxi-<service>:manual-test
    ```
    (repeat for all 7 — `gateway_service`'s context is
-   `services/gateway_service`, not repo root, per the spec).
+   `services/gateway_service`, not repo root, per the spec, **and** it
+   builds from `Dockerfile.k8s`, not the regular `Dockerfile` — see
+   Task 4 — since the regular one bakes in the Compose-only `nginx.conf`).
 2. `helm install inno-taxi deploy/helm/inno-taxi --set domain=<your real domain> --set image.tag=manual-test`
 3. `kubectl get pods` — every pod reaches `Running`/`1/1 Ready`. If any
    Postgres/Mongo/etc. pod isn't ready, `kubectl logs`/`kubectl describe
@@ -661,7 +690,8 @@ action's options.
    vulncheck]`, only on push to `main`: `docker build` with the context
    rule from the spec (repo root for the 6 Go services, since they
    `replace` the `shared` module via a relative path;
-   `services/gateway_service` for gateway), `trivy image` scan on the
+   `services/gateway_service` for gateway, built with `Dockerfile.k8s`
+   specifically, not the regular `Dockerfile` — see Task 4), `trivy image` scan on the
    built image (fail on `HIGH`/`CRITICAL`), then push to
    `ghcr.io/<owner>/inno-taxi-<service>:${{ github.sha }}` and `:latest`,
    authenticating with the built-in `secrets.GITHUB_TOKEN` (needs

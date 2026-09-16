@@ -102,44 +102,54 @@ exposing its container port. `gateway-service`'s `Deployment` is the same
 shape but built from `services/gateway_service`'s own Dockerfile/context
 (it has no Go module, no `shared` dependency).
 
-**Two application-code changes are required, not just new manifests —
-both confined to `services/gateway_service/nginx.conf`:**
+**`gateway_service`'s nginx config needs two variants, not one shared
+file — discovered during the real deploy (2026-09-16), initially got this
+wrong by editing the single existing `nginx.conf` in place.** The original
+plan mutated `services/gateway_service/nginx.conf` directly for
+Kubernetes, which silently broke the Docker Compose dev deployment (the
+same file backs both `docker-compose.yaml`'s `gateway_service` build and
+this chart's `gateway-service` image) — README requires both "Development:
+Docker Compose" and "Production: Kubernetes" to work, so breaking one to
+fix the other isn't acceptable. The chosen fix: **two config files and two
+Dockerfiles**, not templating (an `envsubst`-based single-template
+approach was considered and rejected — nginx configs are already full of
+`$variables` of their own, e.g. `$remote_addr`, `$upstream_http_x_user_id`,
+and a blanket `envsubst` pass risks colliding with them; two explicit
+files are simpler to reason about for this project's scale):
 
-1. Line 18 hardcodes `resolver 127.0.0.11 valid=10s;` — `127.0.0.11` is
-   Docker Compose's embedded per-network DNS server, which does not exist
-   inside a Kubernetes pod. It must become the cluster's DNS Service IP.
-   k3s's default service CIDR is `10.43.0.0/16`, which deterministically
-   assigns CoreDNS (the `kube-dns` Service) the ClusterIP `10.43.0.10` —
-   since this deploy targets k3s specifically (not an arbitrary cluster),
-   that constant is knowable ahead of time rather than something to
-   discover at runtime.
-2. 18 `set $<name>_service "<name>_service:<port>";` lines hardcode
-   underscored hostnames (`auth_service:8082`, `user_service:8080`,
-   `driver_service:8081`, `order_service:8080`, `analytic_service:8085`) —
-   these match the Docker Compose container names exactly today, but a
-   Kubernetes `Service` name must be a valid DNS-1035 label
-   (`[a-z]([-a-z0-9]*[a-z0-9])?`) and **cannot contain underscores**. Every
-   one of these literals must change to the hyphenated form (`auth-service`,
-   `user-service`, `driver-service`, `order-service`, `analytic-service`) to
-   match the `Service` names this chart creates — the port numbers are
-   unaffected.
+- `services/gateway_service/nginx.conf` — unchanged, still backs
+  `docker-compose.yaml` via the existing `Dockerfile`. Keeps Docker
+  Compose's own DNS (`resolver 127.0.0.11`) and underscored container
+  names (`auth_service:8082`, etc.) exactly as they were.
+- `services/gateway_service/nginx.k8s.conf` (new) + `Dockerfile.k8s` (new,
+  otherwise identical to `Dockerfile`, just `COPY`ing the k8s config) —
+  used only when building `gateway-service`'s image for this chart. Three
+  differences from the Compose version:
+  1. `resolver 127.0.0.11` → `resolver 10.43.0.10` — `127.0.0.11` is
+     Docker Compose's embedded per-network DNS server, which doesn't exist
+     inside a Kubernetes pod. `10.43.0.10` is CoreDNS's ClusterIP, which
+     k3s assigns deterministically from its default `10.43.0.0/16` service
+     CIDR — since this deploy targets k3s specifically, that constant is
+     knowable ahead of time.
+  2. Every `set $<name>_service "<name>_service:<port>";` literal's
+     hostname changes from underscored (`auth_service`) to hyphenated
+     (`auth-service`) — a Kubernetes `Service` name is a DNS-1035 label
+     (`[a-z]([-a-z0-9]*[a-z0-9])?`) and **cannot contain underscores**, so
+     it must match the `Service` names this chart actually creates.
+  3. Each of those hostnames must additionally be a **fully-qualified**
+     in-cluster DNS name (`user-service.default.svc.cluster.local:8080`,
+     not `user-service:8080`) — `nginx`'s `resolver` directive doesn't
+     consult `/etc/resolv.conf` at all, not just for the nameserver address
+     (point 1) but also the pod's DNS `search` list
+     (`default.svc.cluster.local`, `svc.cluster.local`, `cluster.local`)
+     that lets ordinary clients (Go's resolver, `curl`, etc.) resolve a
+     bare name like `mongo`. `nginx`'s resolver sends exactly the hostname
+     it's given, so an unqualified `user-service` gets NXDOMAIN from
+     CoreDNS. `default` is the namespace this chart deploys into.
 
-Without both fixes, `gateway_service` cannot resolve — or even name — any
-of the other 6 services once deployed to Kubernetes.
-
-**A third fix, found during the real deploy (2026-09-16):** even with the
-resolver IP corrected, `nginx`'s `resolver` directive does not consult
-`/etc/resolv.conf` at all — not just the nameserver address (which is why
-the IP had to be hardcoded above), but also the pod's DNS `search` list
-(`default.svc.cluster.local`, `svc.cluster.local`, `cluster.local`, with
-`ndots:5`) that lets ordinary clients (Go's resolver, `curl`, etc.) resolve
-a bare Service name like `mongo` or `kafka`. `nginx`'s internal resolver
-sends exactly the hostname it's given, unqualified, so a bare name like
-`user-service` gets NXDOMAIN from CoreDNS. Every one of the same 18
-`set $<x>_service "..."` literals must carry the full in-cluster DNS name
-instead: `user-service.default.svc.cluster.local:8080`, not
-`user-service:8080` (`default` because that's the namespace this chart
-deploys into).
+CI (Task 16) must build `gateway-service`'s image with
+`-f services/gateway_service/Dockerfile.k8s` — every other service still
+builds from its regular `Dockerfile`, unchanged.
 
 ## Stateful Dependencies
 

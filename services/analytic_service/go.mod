@@ -1,6 +1,6 @@
 module github.com/aleksiaichuk-innowise/inno_taxi/services/analytic_service
 
-go 1.26.1
+go 1.26.6
 
 replace github.com/aleksiaichuk-innowise/inno_taxi/shared => ../../shared
 

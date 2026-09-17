@@ -1,6 +1,6 @@
 module github.com/aleksiaichuk-innowise/inno_taxi/services/wallet_service
 
-go 1.26.1
+go 1.26.6
 
 replace github.com/aleksiaichuk-innowise/inno_taxi/shared => ../../shared
 
@@ -70,7 +70,7 @@ require (
 	github.com/pierrec/lz4/v4 v4.1.29 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/quic-go/qpack v0.6.0 // indirect
-	github.com/quic-go/quic-go v0.59.0 // indirect
+	github.com/quic-go/quic-go v0.59.1 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20250401214520-65e299d6c5c9 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect

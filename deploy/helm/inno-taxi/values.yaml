@@ -3,14 +3,3 @@ image:
   registry: "ghcr.io/aleksiaichuk-innowise/inno-taxi"
   tag: "latest"
 
-credentials:
-  mongoRootUser: "taxi"
-  mongoRootPassword: "taxi"
-  jwtSecret: "taxi"
-  pgOrderUser: "postgres"
-  pgOrderPass: "postgres"
-  pgWalletUser: "postgres"
-  pgWalletPass: "postgres"
-  clickhouseUsername: "default"
-  clickhousePassword: "analytics"
-

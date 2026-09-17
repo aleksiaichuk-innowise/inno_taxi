@@ -138,3 +138,40 @@ jobs:
           git add deploy/helm/inno-taxi/values-prod.yaml
           git commit -m "chore: bump image tag to ${{ github.sha }}" || exit 0
           git push
+
+  sync-secret:
+    needs: build-and-push
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    env:
+      MONGO_ROOT_USER: ${{ secrets.MONGO_ROOT_USER }}
+      MONGO_ROOT_PASSWORD: ${{ secrets.MONGO_ROOT_PASSWORD }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      PG_ORDER_USER: ${{ secrets.PG_ORDER_USER }}
+      PG_ORDER_PASS: ${{ secrets.PG_ORDER_PASS }}
+      PG_WALLET_USER: ${{ secrets.PG_WALLET_USER }}
+      PG_WALLET_PASS: ${{ secrets.PG_WALLET_PASS }}
+      CLICKHOUSE_USERNAME: ${{ secrets.CLICKHOUSE_USERNAME }}
+      CLICKHOUSE_PASSWORD: ${{ secrets.CLICKHOUSE_PASSWORD }}
+    steps:
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+      - name: Create or update the k8s Secret over SSH
+        run: |
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key root@64.226.69.180 bash -s <<REMOTE
+          export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+          kubectl create secret generic inno-taxi-secrets \
+            --from-literal=mongoRootUser="$MONGO_ROOT_USER" \
+            --from-literal=mongoRootPassword="$MONGO_ROOT_PASSWORD" \
+            --from-literal=jwtSecret="$JWT_SECRET" \
+            --from-literal=pgOrderUser="$PG_ORDER_USER" \
+            --from-literal=pgOrderPass="$PG_ORDER_PASS" \
+            --from-literal=pgWalletUser="$PG_WALLET_USER" \
+            --from-literal=pgWalletPass="$PG_WALLET_PASS" \
+            --from-literal=clickhouseUsername="$CLICKHOUSE_USERNAME" \
+            --from-literal=clickhousePassword="$CLICKHOUSE_PASSWORD" \
+            --dry-run=client -o yaml | kubectl apply -f -
+          REMOTE

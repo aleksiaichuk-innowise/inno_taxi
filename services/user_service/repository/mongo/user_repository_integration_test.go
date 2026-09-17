@@ -16,11 +16,11 @@ import (
 	"go.mongodb.org/mongo-driver/v2/bson"
 
 	dbmongo "github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/app/db/mongo"
-	"github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/config"
 	serviceEntity "github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/entity/service"
 	"github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/errorsx"
 	mongomigration "github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/migrations/mongo"
 	repomongo "github.com/aleksiaichuk-innowise/inno_taxi/services/user_service/repository/mongo"
+	shared "github.com/aleksiaichuk-innowise/inno_taxi/shared/config"
 )
 
 var testRepo *repomongo.UserRepository
@@ -54,7 +54,7 @@ func run(m *testing.M) int {
 	}
 	defer func() { _ = pool.Purge(resource) }()
 
-	cfg := &config.MongoConfig{
+	cfg := &shared.MongoConfig{
 		Host:     "localhost",
 		Port:     resource.GetPort("27017/tcp"),
 		Database: "test",
